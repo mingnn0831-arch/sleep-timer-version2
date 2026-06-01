@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#0a0a0f" />
+  <title>수면 기록</title>
+  <link rel="icon" href="icon-192.png" type="image/png" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #13131a;
+      --border: rgba(255,255,255,0.07);
+      --text: #f0ede8;
+      --muted: rgba(240,237,232,0.35);
+      --sleep-color: #7b68ee;
+      --wake-color: #f4a44a;
+      --accent: #c8b8ff;
+      --font: 'Pretendard', -apple-system, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      overflow-x: hidden;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100svh;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+
+    /* ── Header ── */
+    .header {
+      padding: 20px 24px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header-title {
+      font-family: var(--font);
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .tab-bar {
+      display: flex;
+      gap: 4px;
+      background: var(--surface);
+      border-radius: 20px;
+      padding: 3px;
+    }
+    .tab-bar button {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-family: var(--font);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 5px 14px;
+      border-radius: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab-bar button.active {
+      background: var(--border);
+      color: var(--text);
+    }
+
+    /* ── Clock ── */
+    .clock-section {
+      padding: 28px 24px 0;
+      text-align: center;
+    }
+    .clock {
+      font-family: var(--font);
+      font-size: 72px;
+      font-weight: 200;
+      letter-spacing: -3px;
+      line-height: 1;
+    }
+    .clock-date {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 6px;
+      font-weight: 300;
+    }
+
+    /* ── Status badge ── */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 18px;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      transition: all 0.4s;
+    }
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: background 0.4s;
+    }
+    .status-badge.sleeping .status-dot { background: var(--wake-color); box-shadow: 0 0 8px var(--wake-color); animation: pulse 2s infinite; }
+    .status-badge.awake    .status-dot { background: var(--wake-color); box-shadow: 0 0 8px var(--wake-color); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* ── Buttons ── */
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      padding: 28px 24px 0;
+    }
+    .btn {
+      flex: 1;
+      border: none;
+      border-radius: 16px;
+      padding: 20px 12px;
+      font-family: var(--font);
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      transition: transform 0.15s, opacity 0.15s;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn:active { transform: scale(0.96); }
+    .btn:disabled { opacity: 0.35; cursor: default; transform: none; }
+
+    .btn-sub { font-family: var(--font); font-size: 11px; font-weight: 400; opacity: 0.7; }
+
+    .btn-sleep {
+      background: linear-gradient(145deg, #2a2050, #1a1535);
+      color: var(--accent);
+      border: 1px solid rgba(123,104,238,0.3);
+    }
+    .btn-sleep:not(:disabled):hover { border-color: rgba(123,104,238,0.6); }
+
+    .btn-wake {
+      background: linear-gradient(145deg, #3a2800, #261c00);
+      color: var(--wake-color);
+      border: 1px solid rgba(244,164,74,0.3);
+    }
+    .btn-wake:not(:disabled):hover { border-color: rgba(244,164,74,0.6); }
+
+    /* ── Today card ── */
+    .today-card {
+      margin: 20px 24px 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 20px;
+    }
+    .today-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    /* 취침 / 기상 — 위쪽 작은 행 */
+    .today-times-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .today-time-item {
+      flex: 1;
+      background: rgba(255,255,255,0.04);
+      border-radius: 12px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .time-icon {
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .time-info { display: flex; flex-direction: column; gap: 2px; }
+    .time-info-label {
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+    .time-info-value {
+      font-size: 20px;
+      font-weight: 300;
+      letter-spacing: -0.5px;
+      line-height: 1;
+    }
+    .time-info-value.sleep-v { color: var(--accent); }
+    .time-info-value.wake-v  { color: var(--wake-color); }
+
+    .times-arrow {
+      font-size: 14px;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    /* 수면시간 — 아래 큰 행 */
+    .today-dur-row {
+      background: rgba(255,255,255,0.03);
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .dur-label {
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--muted);
+    }
+    .dur-value {
+      font-size: 32px;
+      font-weight: 200;
+      letter-spacing: -1px;
+      color: var(--text);
+    }
+
+
+    /* ── History ── */
+    .history-section {
+      flex: 1;
+      padding: 20px 24px 24px;
+      overflow-y: auto;
+    }
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .history-title {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .clear-btn {
+      font-size: 11px;
+      color: var(--muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: var(--font);
+      padding: 2px 6px;
+    }
+
+    /* ── Monthly group ── */
+    .month-group { margin-bottom: 24px; }
+    .month-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      padding: 0 2px;
+    }
+    .history-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .item-delete-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
+      border-radius: 50%;
+      color: var(--muted);
+      transition: background-color 0.2s, color 0.2s;
+    }
+    .item-delete-btn:hover {
+      background-color: rgba(255, 75, 75, 0.12);
+      color: #ff4b4b;
+    }
+    
+    /* 카드 */
+    .history-item {
+      position: relative;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .history-date {
+      font-size: 12px;
+      color: var(--muted);
+      min-width: 48px;
+      font-weight: 400;
+    }
+    .history-times {
+      flex: 1;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .history-arrow { font-size: 12px; color: var(--muted); }
+    .history-time { font-size: 16px; font-weight: 300; }
+    .history-dur {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      background: rgba(255,255,255,0.05);
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+    .history-dur.good { color: #7fe0a0; }
+    .history-dur.ok   { color: var(--wake-color); }
+    .history-dur.bad  { color: #e07f7f; }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 0;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 300;
+    }
+    .empty-state span { display: block; font-size: 32px; margin-bottom: 10px; }
+
+    /* ── Views ── */
+    .view { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+    .view.active { display: flex; }
+
+    /* ── Ripple ── */
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.12);
+      transform: scale(0);
+      animation: ripple-anim 0.5s linear;
+      pointer-events: none;
+    }
+    @keyframes ripple-anim {
+      to { transform: scale(4); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">수면 기록</div>
+  <div class="tab-bar">
+    <button class="active" onclick="switchTab('home')">기록</button>
+    <button onclick="switchTab('history')">히스토리</button>
+  </div>
+</div>
+
+<!-- HOME VIEW -->
+<div class="view active" id="view-home">
+
+  <div class="clock-section">
+    <div class="clock" id="clock">--:--</div>
+    <div class="clock-date" id="clock-date"></div>
+    <div class="status-badge" id="status-badge">
+      <div class="status-dot"></div>
+      <span id="status-text">대기 중</span>
+    </div>
+  </div>
+
+  <div class="btn-group">
+    <button class="btn btn-sleep" id="btn-sleep" onclick="recordSleep(event)">
+      🌙
+      <span>지금 잘래요</span>
+      <span class="btn-sub" id="sleep-sub">지금 기록</span>
+    </button>
+    <button class="btn btn-wake" id="btn-wake" onclick="recordWake(event)" disabled>
+      ☀️
+      <span>기상할게요</span>
+      <span class="btn-sub" id="wake-sub">취침 후 활성화</span>
+    </button>
+  </div>
+
+  <div class="today-card">
+    <div class="today-label">오늘 기록</div>
+
+    <!-- 취침 / 기상 — 위 작은 행 -->
+    <div class="today-times-row">
+      <div class="today-time-item">
+        <span class="time-icon">🌙</span>
+        <div class="time-info">
+          <span class="time-info-label">취침</span>
+          <span class="time-info-value sleep-v" id="today-sleep">--:--</span>
+        </div>
+      </div>
+      <span class="times-arrow">→</span>
+      <div class="today-time-item">
+        <span class="time-icon">☀️</span>
+        <div class="time-info">
+          <span class="time-info-label">기상</span>
+          <span class="time-info-value wake-v" id="today-wake">--:--</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 수면시간 — 아래 큰 행 -->
+    <div class="today-dur-row">
+      <span class="dur-label">수면시간</span>
+      <span class="dur-value" id="today-dur">--h --m</span>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- HISTORY VIEW -->
+<div class="view" id="view-history">
+  <div class="history-section">
+    <div class="history-header">
+      <div class="history-title">수면 기록 히스토리</div>
+    </div>
+    <div id="history-list"></div>
+  </div>
+</div>
+
+<script>
+  // ── State ──
+  const STATE_KEY = 'sleep_state_v2';
+  const HIST_KEY  = 'sleep_history_v2';
+
+  let state = JSON.parse(localStorage.getItem(STATE_KEY) || 'null') || { sleeping: false, sleepTime: null, wakeTime: null };
+  let history = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
+
+  function saveState() { localStorage.setItem(STATE_KEY, JSON.stringify(state)); }
+  function saveHistory() { localStorage.setItem(HIST_KEY, JSON.stringify(history)); }
+
+  // ── Clock ──
+  const days = ['일','월','화','수','목','금','토'];
+  function updateClock() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2,'0');
+    const m = String(now.getMinutes()).padStart(2,'0');
+    document.getElementById('clock').textContent = `${h}:${m}`;
+    document.getElementById('clock-date').textContent =
+      `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')} ${days[now.getDay()]}요일`;
+
+    if (state.sleeping && state.sleepTime) {
+      const elapsed = (now - new Date(state.sleepTime)) / 1000 / 3600;
+      const h2 = Math.floor(elapsed);
+      const mm = Math.floor((elapsed - h2) * 60);
+      document.getElementById('wake-sub').textContent = `수면 중 ${h2}h ${mm}m`;
+    }
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  // ── UI Sync ──
+  function syncUI() {
+    const badge = document.getElementById('status-badge');
+    const statusText = document.getElementById('status-text');
+    const btnSleep = document.getElementById('btn-sleep');
+    const btnWake  = document.getElementById('btn-wake');
+    const sleepSub = document.getElementById('sleep-sub');
+    const wakeSub  = document.getElementById('wake-sub');
+
+    if (state.sleeping) {
+      badge.className = 'status-badge sleeping';
+      statusText.textContent = '수면 중';
+      btnSleep.disabled = true;
+      btnWake.disabled  = false;
+      sleepSub.textContent = formatTime(state.sleepTime) + ' 기록됨';
+      wakeSub.textContent  = '기상 시간 기록';
+    } else {
+      badge.className = 'status-badge';
+      statusText.textContent = '대기 중';
+      btnSleep.disabled = false;
+      btnWake.disabled  = true;
+      sleepSub.textContent = '지금 기록';
+      wakeSub.textContent  = '취침 후 활성화';
+    }
+
+    document.getElementById('today-sleep').textContent = state.sleepTime ? formatTime(state.sleepTime) : '--:--';
+    document.getElementById('today-wake').textContent  = state.wakeTime  ? formatTime(state.wakeTime)  : '--:--';
+
+    if (state.sleepTime && state.wakeTime) {
+      const dur = calcDuration(state.sleepTime, state.wakeTime);
+      document.getElementById('today-dur').textContent = formatDur(dur);
+    } else {
+      document.getElementById('today-dur').textContent = '--h --m';
+    }
+  }
+
+  function formatTime(iso) {
+    const d = new Date(iso);
+    return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+  }
+
+  function calcDuration(start, end) {
+    return Math.max(0, (new Date(end) - new Date(start)) / 1000);
+  }
+
+  function formatDur(secs) {
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    return `${h}h ${String(m).padStart(2,'0')}m`;
+  }
+
+  // ── Actions ──
+  function recordSleep(e) {
+    if (!confirm('취침시간을 기록하시겠습니까?')) return;
+    addRipple(e);
+    const now = new Date().toISOString();
+    state = { sleeping: true, sleepTime: now, wakeTime: null };
+    saveState();
+    syncUI();
+  }
+
+  function recordWake(e) {
+    if (!confirm('기상시간을 기록하시겠습니까?')) return;
+    addRipple(e);
+    const now = new Date().toISOString();
+    state.wakeTime = now;
+    state.sleeping  = false;
+
+    const dur = calcDuration(state.sleepTime, state.wakeTime);
+    history.unshift({ sleepTime: state.sleepTime, wakeTime: state.wakeTime, duration: dur });
+    if (history.length > 30) history.pop();
+    saveHistory();
+    saveState();
+    syncUI();
+    renderHistory();
+  }
+
+  // ── Ripple ──
+  function addRipple(e) {
+    const btn = e.currentTarget;
+    const r = document.createElement('span');
+    r.className = 'ripple';
+    const size = Math.max(btn.offsetWidth, btn.offsetHeight);
+    const rect = btn.getBoundingClientRect();
+    r.style.width = r.style.height = size + 'px';
+    r.style.left = (e.clientX - rect.left - size/2) + 'px';
+    r.style.top  = (e.clientY - rect.top  - size/2) + 'px';
+    btn.appendChild(r);
+    setTimeout(() => r.remove(), 600);
+  }
+
+  // ── History ──
+  function renderHistory() {
+    const container = document.getElementById('history-list');
+    if (!history.length) {
+      container.innerHTML = '<div class="empty-state"><span>🌙</span>아직 기록이 없어요</div>';
+      return;
+    }
+
+    // Group by YYYY-MM
+    const groups = {};
+    history.forEach((rec, idx) => {
+      const d = new Date(rec.sleepTime);
+      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      if (!groups[key]) groups[key] = [];
+      groups[key].push({ rec, idx });
+    });
+
+    const monthNames = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+
+    container.innerHTML = Object.keys(groups).sort((a,b) => b.localeCompare(a)).map(key => {
+      const [y, m] = key.split('-');
+      const label = `${y}년 ${monthNames[parseInt(m)-1]}`;
+      const items = groups[key].map(({ rec, idx }) => {
+        const durH = rec.duration / 3600;
+        const durClass = durH >= 7 ? 'good' : durH >= 5.5 ? 'ok' : 'bad';
+        const d = new Date(rec.sleepTime);
+        const dateStr = `${parseInt(m)}/${d.getDate()} (${['일','월','화','수','목','금','토'][d.getDay()]})`;
+        return `
+          <div class="history-item" data-idx="${idx}" id="item-${idx}">
+            <div class="history-date">${dateStr}</div>
+            <div class="history-times">
+              <span class="history-time" style="color:var(--accent)">${formatTime(rec.sleepTime)}</span>
+              <span class="history-arrow">→</span>
+              <span class="history-time" style="color:var(--wake-color)">${formatTime(rec.wakeTime)}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <div class="history-dur ${durClass}">${formatDur(rec.duration)}</div>
+              <button class="item-delete-btn" onclick="deleteItem(${idx})" title="삭제">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                  <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                </svg>
+              </button>
+            </div>
+          </div>`;
+      }).join('');
+
+      return `<div class="month-group">
+        <div class="month-label">${label}</div>
+        <div class="history-list">${items}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function deleteItem(idx) {
+    if (!confirm('정말 삭제하시겠습니까?')) return;
+    
+    const item = document.getElementById('item-' + idx);
+    if (item) {
+      item.style.transition = 'opacity 0.25s ease, transform 0.25s ease, max-height 0.3s ease, margin 0.3s ease, padding 0.3s ease, border-width 0.3s ease';
+      item.style.opacity = '0';
+      item.style.transform = 'translateY(8px)';
+      item.style.maxHeight = '0px';
+      item.style.padding = '0px';
+      item.style.marginTop = '0px';
+      item.style.marginBottom = '0px';
+      item.style.borderWidth = '0px';
+      item.style.overflow = 'hidden';
+    }
+    
+    setTimeout(() => {
+      history.splice(idx, 1);
+      saveHistory();
+      renderHistory();
+    }, 280);
+  }
+
+  function clearHistory() {
+    if (!confirm('전체 기록을 삭제할까요?')) return;
+    history = [];
+    saveHistory();
+    renderHistory();
+  }
+
+  // ── Tabs ──
+  function switchTab(tab) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.tab-bar button').forEach(b => b.classList.remove('active'));
+    document.getElementById('view-' + tab).classList.add('active');
+    document.querySelector(`.tab-bar button:nth-child(${tab === 'home' ? 1 : 2})`).classList.add('active');
+    if (tab === 'history') renderHistory();
+  }
+
+  // ── Init ──
+  syncUI();
+  renderHistory();
+
+  // ── Service Worker ──
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+</script>
+</body>
+</html>
