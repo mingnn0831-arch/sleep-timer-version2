@@ -1,9 +1,10 @@
-const CACHE = 'sleep-v2';
+const CACHE = 'sleep-v3';
 const FILES = [
   './index.html',
-  './manifest.json?v=2',
-  './icon-192.png?v=2',
-  './icon-512.png?v=2'
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png',
+  './apple-icon.png'
 ];
 
 self.addEventListener('install', e => {
