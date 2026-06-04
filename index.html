@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#0B1020" />
@@ -51,12 +51,12 @@
       display: flex;
       flex-direction: column;
       height: 100svh;
-      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      padding: 0 env(safe-area-inset-right) 0 env(safe-area-inset-left);
     }
 
     /* ── App Header ── */
     .app-header {
-      padding: 20px 20px 0;
+      padding: calc(12px + env(safe-area-inset-top)) 20px 0;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -302,7 +302,7 @@
 
     /* ── Main Action CTA Button ── */
     .cta-container {
-      padding: 0 20px 24px;
+      padding: 0 20px calc(72px + env(safe-area-inset-bottom));
     }
     .cta-btn {
       width: 100%;
@@ -911,6 +911,25 @@
       background: rgba(129, 140, 248, 0.12);
       color: var(--accent);
     }
+    .today-reset-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: var(--muted);
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+    }
+    .today-reset-btn:hover {
+      background: rgba(239, 68, 68, 0.12);
+      color: var(--bad);
+    }
+    .today-reset-btn:active {
+      transform: scale(0.9);
+    }
     .edit-cond-row {
       display: flex;
       flex-direction: column;
@@ -1127,7 +1146,14 @@
 
         <!-- Today Record Card -->
         <div class="card" id="today-record-card">
-          <div class="card-title">오늘의 기록</div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div class="card-title" style="margin-bottom: 0;">오늘의 기록</div>
+            <button id="today-reset-btn" class="today-reset-btn" onclick="resetTodayRecord()" title="기록 초기화" style="display: none;">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+              </svg>
+            </button>
+          </div>
           <div class="today-time-grid" id="today-time-grid">
             <div class="time-node">
               <span class="time-node-label">취침시간</span>
@@ -1604,6 +1630,8 @@
         bad: '<span style="color:#FCA5A5">🔴 나쁨</span>' 
       };
 
+      const resetBtn = document.getElementById('today-reset-btn');
+
       if (state.sleeping) {
         // Sleep Mode UI
         statusIcon.textContent = '🌙';
@@ -1645,6 +1673,9 @@
         if (todayDetailsCondEl) {
           todayDetailsCondEl.innerHTML = `💤 <strong>컨디션 변화:</strong> 취침 전 ${conditionIcons[state.sleepCondition || 'normal']}`;
         }
+
+        // 수면 중일 때는 초기화 버튼 노출
+        if (resetBtn) resetBtn.style.display = 'flex';
       } else {
         // Awake Mode UI
         statusIcon.textContent = '🌤';
@@ -1689,6 +1720,9 @@
             todayDetailsCondEl.innerHTML = `💤 <strong>컨디션 변화:</strong> 취침 전 ${conditionIcons[todayRecord.sleepCondition || 'normal']} → 기상 후 ${conditionIcons[todayRecord.wakeCondition || 'normal']}`;
           }
 
+          // 완료된 기록이 있으므로 초기화 버튼 노출
+          if (resetBtn) resetBtn.style.display = 'flex';
+
           // 최근 수면 기록 카드에는 오늘 이전 완료 기록(history[1] 또는 오늘 날짜가 아닌 것 중 첫 번째)을 노출
           const pastRecord = history.filter(rec => rec.date !== todayStr)[0];
           renderRecentRecordCard(pastRecord);
@@ -1701,8 +1735,37 @@
           const todayDetailsEl = document.getElementById('today-details');
           if (todayDetailsEl) todayDetailsEl.style.display = 'none';
 
+          // 초기화할 기록이 없으므로 초기화 버튼 숨김
+          if (resetBtn) resetBtn.style.display = 'none';
+
           // 최근 수면 기록 카드에는 전체 기록 중 가장 최신 것(history[0])을 노출
           renderRecentRecordCard(history[0]);
+        }
+      }
+    }
+
+    function resetTodayRecord() {
+      if (state.sleeping) {
+        if (!confirm('현재 측정 중인 수면 기록을 초기화하시겠습니까?\n(수면 측정 상태가 해제됩니다.)')) return;
+        state.sleeping = false;
+        state.sleepTime = null;
+        state.sleepCondition = 'normal';
+        state.wakeCondition = 'normal';
+        state.pendingWakeTime = null;
+        saveState();
+        syncHomeUI();
+      } else {
+        const now = new Date();
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const todayIdx = history.findIndex(rec => rec.date === todayStr);
+        if (todayIdx !== -1) {
+          if (!confirm('오늘 완료된 수면 기록을 삭제하고 초기화하시겠습니까?')) return;
+          history.splice(todayIdx, 1);
+          saveHistory();
+          syncHomeUI();
+          renderHistoryTabs(); // 히스토리 리스트도 동시 업데이트
+        } else {
+          alert('초기화할 오늘의 기록이 없습니다.');
         }
       }
     }
