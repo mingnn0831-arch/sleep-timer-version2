@@ -41,7 +41,8 @@
 
     html {
       height: -webkit-fill-available;
-      background-color: var(--bg-start) !important;
+      min-height: 100dvh;
+      background-color: var(--bg-end) !important;
       overscroll-behavior: none;
     }
 
@@ -58,7 +59,9 @@
       flex-direction: column;
       height: 100vh;
       height: -webkit-fill-available;
+      min-height: 100dvh;
       padding: 0 env(safe-area-inset-right) 0 env(safe-area-inset-left);
+      background-color: var(--bg-end);
     }
 
     /* ── App Header ── */
@@ -294,7 +297,7 @@
       width: 100%;
       background: transparent;
       box-sizing: border-box;
-      padding: 12px 20px calc(16px + env(safe-area-inset-bottom));
+      padding: 12px 20px 16px;
       z-index: 100;
     }
     .cta-btn {
