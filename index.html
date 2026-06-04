@@ -292,12 +292,7 @@
       bottom: 0;
       left: 0;
       width: 100%;
-      background: linear-gradient(
-        to bottom,
-        transparent 0%,
-        rgba(11, 16, 32, 0.92) 40%,
-        #0B1020 70%
-      );
+      background: transparent;
       box-sizing: border-box;
       padding: 12px 20px calc(16px + env(safe-area-inset-bottom));
       z-index: 100;
@@ -1213,7 +1208,7 @@
       </div>
 
       <!-- Main Bottom Action CTA Button -->
-      <div class="bottom-button-wrapper">
+      <div class="bottom-button-wrapper" id="bottom-btn-wrapper">
         <button class="cta-btn" id="cta-action-btn" onclick="handleMainAction()">
           <span>지금 잘래요</span>
         </button>
@@ -1541,6 +1536,10 @@
       // Show/Hide views
       document.getElementById('view-home').classList.toggle('active', tab === 'home');
       document.getElementById('view-history').classList.toggle('active', tab === 'history');
+
+      // bottom-button-wrapper는 fixed라 view와 무관하게 항상 렌더링됨 → 수동 제어
+      const btnWrapper = document.getElementById('bottom-btn-wrapper');
+      if (btnWrapper) btnWrapper.style.display = tab === 'home' ? 'block' : 'none';
 
       if (tab === 'history') {
         renderHistoryTabs();
