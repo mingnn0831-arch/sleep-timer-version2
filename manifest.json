@@ -4,8 +4,8 @@
   "description": "취침·기상 시간을 기록하고 수면 시간을 측정합니다",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#0a0a0f",
-  "theme_color": "#0a0a0f",
+  "background_color": "#111827",
+  "theme_color": "#111827",
   "orientation": "portrait",
   "icons": [
     {
