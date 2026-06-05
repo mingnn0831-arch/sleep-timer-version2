@@ -424,6 +424,18 @@
       transition: color 0.2s;
     }
     .h-card-del:active { color: var(--bad); }
+    .h-card-actions { display: flex; align-items: center; gap: 2px; }
+    .h-card-edit {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 2px;
+      border-radius: 50%;
+      display: flex;
+      transition: color 0.2s;
+    }
+    .h-card-edit:active { color: var(--accent); }
     .h-card-mid {
       display: flex;
       align-items: center;
@@ -566,17 +578,19 @@
       border-color: rgba(129,140,248,0.15);
     }
     .cal-cell.today { border-color: var(--accent); box-shadow: 0 0 8px rgba(129,140,248,0.2); }
-    .cal-cell.selected { border-color: var(--accent) !important; background: rgba(129,140,248,0.22) !important; }
-    .cal-cell.cond-good   { background: rgba(34,197,94,0.2) !important;  border-color: rgba(34,197,94,0.4) !important; }
-    .cal-cell.cond-normal { background: rgba(250,204,21,0.2) !important; border-color: rgba(250,204,21,0.4) !important; }
-    .cal-cell.cond-bad    { background: rgba(239,68,68,0.2) !important;  border-color: rgba(239,68,68,0.4) !important; }
+    /* 컨디션 = 칸 전체를 해당 컬러로 채움 */
+    .cal-cell.cond-good   { background: var(--good)   !important; border-color: var(--good)   !important; }
+    .cal-cell.cond-normal { background: var(--normal) !important; border-color: var(--normal) !important; }
+    .cal-cell.cond-bad    { background: var(--bad)    !important; border-color: var(--bad)    !important; }
+    /* 채워진 칸 위 텍스트는 가독성 위해 짙은 색 */
+    .cal-cell.cond-good .cal-num,  .cal-cell.cond-normal .cal-num,  .cal-cell.cond-bad .cal-num,
+    .cal-cell.cond-good .cal-time, .cal-cell.cond-normal .cal-time, .cal-cell.cond-bad .cal-time { color: #0B1020; }
+    /* 선택 시 컨디션 컬러는 유지하고 흰 테두리로만 강조 */
+    .cal-cell.selected { border-color: #fff !important; box-shadow: 0 0 0 2px rgba(255,255,255,0.5); }
     .cal-num  { font-size: 10px; font-weight: 700; color: var(--muted); }
     .cal-cell.has-data .cal-num { color: var(--text); }
-    .cal-cell.cond-good   .cal-num { color: #86EFAC; }
-    .cal-cell.cond-normal .cal-num { color: #FDE047; }
-    .cal-cell.cond-bad    .cal-num { color: #FCA5A5; }
-    .cal-time  { font-size: 8px; font-weight: 700; text-align: center; color: var(--text); white-space: nowrap; }
-    .cal-emoji { font-size: 8px; text-align: center; }
+    .cal-time  { font-size: 9px; font-weight: 800; text-align: center; color: var(--text); white-space: nowrap; }
+    .cal-emoji { display: none; }
 
     .cal-detail {
       margin-top: 14px;
@@ -675,6 +689,23 @@
       color: #fff;
       box-shadow: 0 4px 14px rgba(239,68,68,0.25);
     }
+
+    /* 기록 수정 모달 */
+    .edit-label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin: 14px 0 6px 2px; }
+    .edit-input {
+      width: 100%;
+      height: 46px;
+      background: rgba(15,23,42,0.5);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 15px;
+      padding: 0 12px;
+    }
+    .edit-input::-webkit-calendar-picker-indicator { filter: invert(0.8); cursor: pointer; }
+    #modal-edit .modal-box { max-width: 340px; max-height: 86vh; overflow-y: auto; }
+    #modal-edit .cond-chip { height: 40px; font-size: 12px; }
 
     /* 완료 토스트 */
     .toast-overlay {
@@ -780,7 +811,7 @@
               </svg>
             </button>
           </div>
-          <div class="time-grid">
+          <div class="time-grid" id="today-timegrid">
             <div class="time-node">
               <div class="time-node-label">취침시간</div>
               <div class="time-node-date" id="today-sleep-date">--.--.--</div>
@@ -951,11 +982,39 @@
 <div class="modal-overlay" id="modal-reset">
   <div class="modal-box">
     <div class="modal-title" style="color:var(--bad)">기록을 초기화할까요?</div>
-    <div class="modal-desc">취침 중 상태와 기록이 삭제됩니다.</div>
+    <div class="modal-desc">오늘의 기록이 삭제됩니다. (취침 중이면 진행 기록이 취소돼요)</div>
     <div class="modal-icon">♻️</div>
     <div class="modal-btns">
       <button class="m-btn m-btn-cancel" onclick="closeModal('modal-reset')">취소</button>
       <button class="m-btn m-btn-danger" onclick="doReset()">초기화하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 기록 수정 -->
+<div class="modal-overlay" id="modal-edit">
+  <div class="modal-box" style="text-align:left">
+    <div class="modal-title" style="text-align:center">기록 수정</div>
+    <label class="edit-label">취침 시간</label>
+    <input type="datetime-local" id="edit-sleep" class="edit-input">
+    <label class="edit-label">기상 시간</label>
+    <input type="datetime-local" id="edit-wake" class="edit-input">
+    <label class="edit-label">취침 전 컨디션</label>
+    <div class="cond-chips" id="edit-sleep-cond">
+      <button class="cond-chip" data-v="good"   onclick="setEditCond('sleep','good')">🟢 좋음</button>
+      <button class="cond-chip" data-v="normal" onclick="setEditCond('sleep','normal')">🟡 보통</button>
+      <button class="cond-chip" data-v="bad"    onclick="setEditCond('sleep','bad')">🔴 나쁨</button>
+    </div>
+    <label class="edit-label">기상 후 컨디션</label>
+    <div class="cond-chips" id="edit-wake-cond">
+      <button class="cond-chip" data-v="good"   onclick="setEditCond('wake','good')">🟢 좋음</button>
+      <button class="cond-chip" data-v="normal" onclick="setEditCond('wake','normal')">🟡 보통</button>
+      <button class="cond-chip" data-v="bad"    onclick="setEditCond('wake','bad')">🔴 나쁨</button>
+    </div>
+    <div id="edit-error" style="display:none;color:var(--bad);font-size:12px;font-weight:600;margin-top:12px;text-align:center"></div>
+    <div class="modal-btns" style="margin-top:20px">
+      <button class="m-btn m-btn-cancel" onclick="closeModal('modal-edit')">취소</button>
+      <button class="m-btn m-btn-ok"     onclick="saveEdit()">저장</button>
     </div>
   </div>
 </div>
@@ -1013,6 +1072,19 @@
   }
   function condIcon(c) {
     return c === 'good' ? '🟢 좋음' : c === 'bad' ? '🔴 나쁨' : '🟡 보통';
+  }
+  function condColor(c) {
+    return c === 'good' ? '#4ADE80' : c === 'bad' ? '#FCA5A5' : '#FDE047';
+  }
+  function condHTML(c) {
+    return `<b style="color:${condColor(c)}">${condIcon(c)}</b>`;
+  }
+  /* 하루 경계 = 오후 6시. now 직전(또는 같은)의 가장 최근 18:00 반환 */
+  function windowStart(now) {
+    const d = new Date(now);
+    d.setHours(18, 0, 0, 0);
+    if (now < d) d.setDate(d.getDate() - 1);
+    return d;
   }
 
   /* ──────────────────────────────────────────────
@@ -1112,59 +1184,55 @@
     renderCondChips('sleep', state.sleepCond);
     renderCondChips('wake', state.wakeCond);
 
-    // 오늘의 기록
+    // ── 오늘의 기록 ──
     const resetBtn = document.getElementById('today-reset-btn');
+    const timeGrid = document.getElementById('today-timegrid');
+    const exBox    = document.getElementById('today-extra');
+    const emptyMsg = document.getElementById('today-empty');
+
+    // 직전 18:00 ~ now 사이(현재 '하루' 구간)에 속한 가장 최근 기록
+    const ws       = windowStart(now);
+    const todayIdx = sleeping ? -1 : history.findIndex(r => new Date(r.wakeTime) >= ws);
+    const todayRec = todayIdx >= 0 ? history[todayIdx] : null;
 
     if (sleeping && state.sleepTime) {
-      // 취침 중
+      // 취침 중: 취침시간 + 취침 전 컨디션
+      timeGrid.style.display = '';
       document.getElementById('today-sleep-date').textContent = dateStr(state.sleepTime);
       document.getElementById('today-sleep').textContent      = hm(state.sleepTime);
       document.getElementById('today-wake-date').textContent  = '기상 대기 중';
       document.getElementById('today-wake').textContent       = '--:--';
-      document.getElementById('today-extra').style.display    = 'none';
-      document.getElementById('today-empty').style.display    = 'none';
+      exBox.style.display = 'flex';
+      document.getElementById('today-dur').textContent = '💤 수면 기록 중...';
+      document.getElementById('today-cond').innerHTML  = `취침 전 컨디션 ${condHTML(state.sleepCond)}`;
+      emptyMsg.style.display = 'none';
+      resetBtn.style.display = 'flex';
+    } else if (todayRec) {
+      // 완료된 오늘 기록: 취침/기상 시간 + 취침 전/기상 후 컨디션
+      timeGrid.style.display = '';
+      document.getElementById('today-sleep-date').textContent = dateStr(todayRec.sleepTime);
+      document.getElementById('today-sleep').textContent      = hm(todayRec.sleepTime);
+      document.getElementById('today-wake-date').textContent  = dateStr(todayRec.wakeTime);
+      document.getElementById('today-wake').textContent       = hm(todayRec.wakeTime);
+      exBox.style.display = 'flex';
+      document.getElementById('today-dur').textContent = `⏳ 수면시간: ${durStr(todayRec.duration)}`;
+      document.getElementById('today-cond').innerHTML  = `💤 취침 전 ${condHTML(todayRec.sleepCond)} → 기상 후 ${condHTML(todayRec.wakeCond)}`;
+      emptyMsg.style.display = 'none';
       resetBtn.style.display = 'flex';
     } else {
-      // 오늘 완료된 기록 찾기 (오후 6시 이전이면 오늘 기록 표시)
-      const todayRecord = history.find(r => {
-        const wd = new Date(r.wakeTime);
-        return wd.getFullYear() === now.getFullYear() && wd.getMonth() === now.getMonth() && wd.getDate() === now.getDate();
-      });
-
-      if (todayRecord && now.getHours() < 18) {
-        document.getElementById('today-sleep-date').textContent = dateStr(todayRecord.sleepTime);
-        document.getElementById('today-sleep').textContent      = hm(todayRecord.sleepTime);
-        document.getElementById('today-wake-date').textContent  = dateStr(todayRecord.wakeTime);
-        document.getElementById('today-wake').textContent       = hm(todayRecord.wakeTime);
-        const ex = document.getElementById('today-extra');
-        ex.style.display = 'flex';
-        document.getElementById('today-dur').textContent  = `⏳ 수면시간: ${durStr(todayRecord.duration)}`;
-        document.getElementById('today-cond').textContent = `💤 컨디션: 취침 전 ${condIcon(todayRecord.sleepCond)} → 기상 후 ${condIcon(todayRecord.wakeCond)}`;
-        document.getElementById('today-empty').style.display = 'none';
-        resetBtn.style.display = 'none';
-      } else {
-        document.getElementById('today-sleep-date').textContent = '--.--.--';
-        document.getElementById('today-sleep').textContent      = '--:--';
-        document.getElementById('today-wake-date').textContent  = '--.--.--';
-        document.getElementById('today-wake').textContent       = '--:--';
-        document.getElementById('today-extra').style.display    = 'none';
-        document.getElementById('today-empty').style.display    = '';
-        resetBtn.style.display = 'none';
-      }
+      // 기록 없음(18시 경계 지나 초기화 포함): 안내 메시지만
+      timeGrid.style.display = 'none';
+      exBox.style.display    = 'none';
+      emptyMsg.style.display = '';
+      resetBtn.style.display = 'none';
     }
 
-    // 최근 기록 카드
+    // ── 최근 수면 기록 (오늘 기록 바로 이전 1건) ──
     const recentRecord = (() => {
       if (history.length === 0) return null;
-      if (!sleeping) {
-        const todayRec = history.find(r => {
-          const wd = new Date(r.wakeTime);
-          return wd.getFullYear() === now.getFullYear() && wd.getMonth() === now.getMonth() && wd.getDate() === now.getDate();
-        });
-        if (todayRec && now.getHours() < 18) return history.find(r => r !== todayRec) || null;
-        return history[0];
-      }
-      return history[0];
+      if (sleeping) return history[0];          // 취침 중엔 직전 완료기록
+      if (todayRec) return history[todayIdx + 1] || null; // 오늘 기록 이전 1건
+      return history[0];                         // 오늘 기록이 비었으면 최신 1건
     })();
 
     const recentCard = document.getElementById('recent-card');
@@ -1174,7 +1242,7 @@
       document.getElementById('recent-sleep').textContent      = hm(recentRecord.sleepTime);
       document.getElementById('recent-wake-date').textContent  = dateStr(recentRecord.wakeTime);
       document.getElementById('recent-wake').textContent       = hm(recentRecord.wakeTime);
-      document.getElementById('recent-extra').innerHTML = `<span>⏳ ${durStr(recentRecord.duration)}</span><span>💤 기상 후 ${condIcon(recentRecord.wakeCond)}</span>`;
+      document.getElementById('recent-extra').innerHTML = `<span>⏳ ${durStr(recentRecord.duration)}</span><span>💤 기상 후 ${condHTML(recentRecord.wakeCond)}</span>`;
     } else {
       recentCard.style.display = 'none';
     }
@@ -1213,10 +1281,10 @@
 
   function doSleepEnd() {
     const now   = new Date();
-    const start = new Date(state.sleepTime);
-    const secs  = (now - start) / 1000;
+    const secs  = (now - new Date(state.sleepTime)) / 1000;
 
-    if (secs < 3600) { // 1시간 미만 경고
+    if (secs <= 300) { // 5분 이하 → 경고 후 확인 저장
+      pendingWake = now.toISOString();
       document.getElementById('modal-warn-time').textContent = hm(now);
       closeModal('modal-end');
       openModal('modal-warn');
@@ -1225,12 +1293,14 @@
     _saveSleepRecord(now, secs);
   }
 
-  let _shortSaveTime = null;
-  function cancelShort() { closeModal('modal-warn'); }
+  /* 경고 모달에서 '저장하기'를 누를 때 쓸 기상시간을 미리 보관 → 저장 누락 방지 */
+  let pendingWake = null;
+  function cancelShort() { pendingWake = null; closeModal('modal-warn'); }
   function saveShort() {
-    const now  = new Date();
-    const secs = (now - new Date(state.sleepTime)) / 1000;
-    _saveSleepRecord(now, secs);
+    const wake = pendingWake ? new Date(pendingWake) : new Date();
+    const secs = Math.max(0, (wake - new Date(state.sleepTime)) / 1000);
+    pendingWake = null;
+    _saveSleepRecord(wake, secs);
   }
 
   function _saveSleepRecord(wakeTime, secs) {
@@ -1260,9 +1330,16 @@
 
   function confirmReset() { openModal('modal-reset'); }
   function doReset() {
-    state.sleeping  = false;
-    state.sleepTime = null;
-    saveState();
+    if (state.sleeping) {
+      // 취침 중 → 진행 중인 기록 취소
+      state.sleeping  = false;
+      state.sleepTime = null;
+      saveState();
+    } else {
+      // 완료된 오늘 기록(직전 18:00 이후) 삭제
+      const idx = history.findIndex(r => new Date(r.wakeTime) >= windowStart(new Date()));
+      if (idx >= 0) { history.splice(idx, 1); saveHistory(); }
+    }
     closeModal('modal-reset');
     syncHome();
   }
@@ -1310,17 +1387,22 @@
         <div class="h-card">
           <div class="h-card-top">
             <div class="h-card-date">${dateDayStr(r.wakeTime)}</div>
-            <button class="h-card-del" onclick="deleteRecord(${i})" title="삭제">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-            </button>
+            <div class="h-card-actions">
+              <button class="h-card-edit" onclick="editRecord(${i})" title="수정">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+              </button>
+              <button class="h-card-del" onclick="deleteRecord(${i})" title="삭제">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+              </button>
+            </div>
           </div>
           <div class="h-card-mid">
             <div class="h-card-time">${hm(r.sleepTime)} → ${hm(r.wakeTime)}</div>
             <div class="h-card-dur ${dc}">${durStr(r.duration)}</div>
           </div>
           <div class="h-card-bot">
-            <span>취침 전 ${condIcon(r.sleepCond)}</span>
-            <span>기상 후 ${condIcon(r.wakeCond)}</span>
+            <span>취침 전 ${condHTML(r.sleepCond)}</span>
+            <span>기상 후 ${condHTML(r.wakeCond)}</span>
           </div>
         </div>`;
     }).join('');
@@ -1330,6 +1412,65 @@
     history.splice(idx, 1);
     saveHistory();
     renderDaily();
+    syncHome();
+  }
+
+  /* ── 일별 기록 수정 ── */
+  let editIdx = null;
+  let editCond = { sleep: 'normal', wake: 'normal' };
+
+  function toLocalInput(iso) {
+    const d = new Date(iso);
+    const p = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
+  function editRecord(idx) {
+    editIdx = idx;
+    const r = history[idx];
+    document.getElementById('edit-sleep').value = toLocalInput(r.sleepTime);
+    document.getElementById('edit-wake').value  = toLocalInput(r.wakeTime);
+    editCond.sleep = r.sleepCond;
+    editCond.wake  = r.wakeCond;
+    renderEditCond('sleep');
+    renderEditCond('wake');
+    document.getElementById('edit-error').style.display = 'none';
+    openModal('modal-edit');
+  }
+  function setEditCond(type, val) {
+    editCond[type] = val;
+    renderEditCond(type);
+  }
+  function renderEditCond(type) {
+    document.getElementById('edit-' + type + '-cond')
+      .querySelectorAll('.cond-chip')
+      .forEach(b => b.classList.toggle('on', b.dataset.v === editCond[type]));
+  }
+  function saveEdit() {
+    if (editIdx === null) return;
+    const err = document.getElementById('edit-error');
+    const sv = document.getElementById('edit-sleep').value;
+    const wv = document.getElementById('edit-wake').value;
+    if (!sv || !wv) { err.textContent = '취침/기상 시간을 모두 입력해주세요.'; err.style.display = 'block'; return; }
+
+    const sleepT = new Date(sv), wakeT = new Date(wv);
+    const secs = (wakeT - sleepT) / 1000;
+    if (secs <= 0) { err.textContent = '기상 시간이 취침 시간보다 빠를 수 없어요.'; err.style.display = 'block'; return; }
+
+    const r = history[editIdx];
+    r.sleepTime = sleepT.toISOString();
+    r.wakeTime  = wakeT.toISOString();
+    r.duration  = secs;
+    r.sleepCond = editCond.sleep;
+    r.wakeCond  = editCond.wake;
+
+    // 기상시간이 바뀌면 순서가 달라질 수 있으니 최신순 재정렬
+    history.sort((a, b) => new Date(b.wakeTime) - new Date(a.wakeTime));
+    saveHistory();
+
+    editIdx = null;
+    closeModal('modal-edit');
+    renderDaily();
+    syncHome();
   }
 
   /* 주별 */
@@ -1418,7 +1559,6 @@
         <div class="${cls.join(' ')}" onclick="showCalDetail(${day})">
           <div class="cal-num">${day}</div>
           ${rec ? `<div class="cal-time">${durStr(rec.duration).replace('시간','h').replace('분','m')}</div>` : ''}
-          ${rec ? `<div class="cal-emoji">${rec.wakeCond === 'good' ? '🟢' : rec.wakeCond === 'bad' ? '🔴' : '🟡'}</div>` : ''}
         </div>`);
     }
 
