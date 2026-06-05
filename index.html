@@ -10,81 +10,99 @@
   <link rel="icon" href="./icon-192.png" type="image/png" />
   <link rel="apple-touch-icon" href="./apple-icon.png" />
   <link rel="manifest" href="./manifest.json" />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
   <style>
-    :root {
-      color-scheme: dark;
-      --bg-start: #0B1020;
-      --bg-end: #111827;
-      --surface: #1E293B;
-      --border: #334155;
-      --accent: #818CF8;
-      --accent-hover: #6366F1;
-      --accent-text: #FFFFFF;
-      --text: #F8FAFC;
-      --muted: #94A3B8;
-      
-      --good: #22C55E;
-      --normal: #FACC15;
-      --bad: #EF4444;
-      
-      --font: 'Pretendard', -apple-system, sans-serif;
-    }
-
-    * { 
-      box-sizing: border-box; 
-      margin: 0; 
-      padding: 0; 
-      -webkit-tap-highlight-color: transparent; 
+    /* ────────────────────────────────────────────────
+       RESET
+    ──────────────────────────────────────────────── */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
       outline: none;
     }
 
+    /* ────────────────────────────────────────────────
+       DESIGN TOKENS
+    ──────────────────────────────────────────────── */
+    :root {
+      color-scheme: dark;
+      --bg-start:   #0B1020;
+      --bg-end:     #111827;
+      --surface:    #1E293B;
+      --border:     #334155;
+      --accent:     #818CF8;
+      --accent-hov: #6366F1;
+      --text:       #F8FAFC;
+      --muted:      #94A3B8;
+      --good:       #22C55E;
+      --normal:     #FACC15;
+      --bad:        #EF4444;
+      --font: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+
+      /* safe area — 기기마다 다름, env()로 자동 처리 */
+      --sat: env(safe-area-inset-top);
+      --sar: env(safe-area-inset-right);
+      --sab: env(safe-area-inset-bottom);
+      --sal: env(safe-area-inset-left);
+    }
+
+    /* ────────────────────────────────────────────────
+       HTML / BODY — 최소화. 레이아웃은 #app-root가 담당.
+    ──────────────────────────────────────────────── */
     html, body {
-      margin: 0;
-      padding: 0;
       width: 100%;
       height: 100%;
-      background-color: var(--bg-end);
-      overscroll-behavior: none;
+      background: var(--bg-end);
       color: var(--text);
       font-family: var(--font);
       user-select: none;
+      /* 바운스 스크롤 방지 */
+      overscroll-behavior: none;
+      -webkit-overflow-scrolling: none;
     }
 
-    /* ── App Root: iOS PWA 풀스크린 레이아웃 코어 ──
-     * position:fixed + inset:0 을 body가 아닌 래퍼 div에 적용 →
-     * iOS WebKit Letterboxing 버그 정확히 회피하면서
-     * 화면 전체를 edge-to-edge로 가득 채우는 프로덕션 검증 패턴 ── */
+    /* ────────────────────────────────────────────────
+       #APP-ROOT
+       iOS PWA에서 하단 여백 없이 edge-to-edge 풀스크린을
+       구현하는 검증된 패턴:
+       · body가 아닌 div에 position:fixed + inset:0 적용
+       · body에 position:fixed 시 iOS WebKit이 safe-area를
+         잘못 계산해 하단에 빈 공간(Letterboxing) 생성
+       · div에 적용하면 이 버그 없이 화면 끝까지 채워짐
+    ──────────────────────────────────────────────── */
     #app-root {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      inset: 0; /* top:0 right:0 bottom:0 left:0 */
       display: flex;
       flex-direction: column;
       overflow: hidden;
       background: linear-gradient(180deg, var(--bg-start) 0%, var(--bg-end) 100%);
     }
 
-    /* ── App Header ── */
+    /* ────────────────────────────────────────────────
+       HEADER — 상단 고정. safe-area-inset-top 으로
+       Dynamic Island 아래에 콘텐츠 배치
+    ──────────────────────────────────────────────── */
     .app-header {
-      padding: calc(12px + env(safe-area-inset-top)) 20px 0;
+      flex-shrink: 0;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      z-index: 10;
-      flex-shrink: 0;
+      padding: calc(var(--sat) + 12px) 20px 12px;
+      padding-left: calc(var(--sal) + 20px);
+      padding-right: calc(var(--sar) + 20px);
     }
     .app-title {
       font-size: 20px;
       font-weight: 800;
       letter-spacing: -0.03em;
-      color: #FFFFFF;
     }
-    .toggle-view-btn {
+    .toggle-btn {
       border: 1px solid var(--border);
-      background: rgba(30, 41, 59, 0.7);
+      background: rgba(30,41,59,0.7);
       backdrop-filter: blur(10px);
       color: var(--text);
       font-family: var(--font);
@@ -93,229 +111,84 @@
       padding: 7px 16px;
       border-radius: 20px;
       cursor: pointer;
-      transition: all 0.25s ease;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      transition: all 0.2s ease;
     }
-    .toggle-view-btn:hover {
-      background: rgba(30, 41, 59, 0.9);
-      border-color: var(--accent);
-    }
-    .toggle-view-btn:active {
-      transform: scale(0.95);
-    }
+    .toggle-btn:active { transform: scale(0.95); }
 
-    /* ── Content Views ── */
+    /* ────────────────────────────────────────────────
+       VIEW CONTAINER — header 아래 남은 공간을 모두 차지
+    ──────────────────────────────────────────────── */
     .view-container {
       flex: 1;
-      min-height: 0;
+      min-height: 0; /* Safari Flexbox 높이 계산 버그 방지 */
       position: relative;
       overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-    .view {
-      display: none;
-      flex: 1;
-      min-height: 0;
-      flex-direction: column;
-      overflow: hidden;
-      opacity: 0;
-      transform: translateY(10px);
-      transition: opacity 0.3s ease, transform 0.3s ease;
-    }
-    .view.active {
-      display: flex;
-      opacity: 1;
-      transform: translateY(0);
     }
 
-    /* ── Scrollable Sections ── */
-    .scroll-section {
+    /* ────────────────────────────────────────────────
+       VIEWS (HOME / HISTORY)
+    ──────────────────────────────────────────────── */
+    .view {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .view.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* ────────────────────────────────────────────────
+       SCROLL AREA
+    ──────────────────────────────────────────────── */
+    .scroll-area {
       flex: 1;
       min-height: 0;
       overflow-y: auto;
-      padding: 20px;
       -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      padding: 16px 20px;
+      /* 좌우 safe-area 반영 */
+      padding-left: calc(var(--sal) + 20px);
+      padding-right: calc(var(--sar) + 20px);
     }
-    /* 홈 뷰: 하단 버튼 래퍼 높이(~88px)만큼 스크롤 여백 확보 */
-    .main-content {
-      padding-bottom: 88px !important;
+    /* 스크롤바 숨김 */
+    .scroll-area::-webkit-scrollbar { display: none; }
+    .scroll-area { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* 홈 뷰: 하단 고정 버튼에 가리지 않도록 여백 */
+    .home-scroll {
+      padding-bottom: calc(var(--sab) + 96px);
     }
-    /* 히스토리 뷰: 홈 인디케이터(safe area) 만큼만 여백 */
-    #history-scroll-content {
-      padding-bottom: calc(20px + env(safe-area-inset-bottom));
-    }
-    /* Hide scrollbar for Chrome, Safari and Opera */
-    .scroll-section::-webkit-scrollbar {
-      display: none;
-    }
-    /* Hide scrollbar for IE, Edge and Firefox */
-    .scroll-section {
-      -ms-overflow-style: none;  /* IE and Edge */
-      scrollbar-width: none;  /* Firefox */
+    /* 히스토리 뷰: safe-area-bottom 만큼만 여백 */
+    .history-scroll {
+      padding-bottom: calc(var(--sab) + 20px);
     }
 
-    /* ── Cards ── */
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 20px;
-      margin-bottom: 24px;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
-      transition: transform 0.2s ease;
-    }
-    .card-title {
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--muted);
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      margin-bottom: 16px;
-    }
-
-    /* ── Status Header (Home) ── */
-    .status-area {
-      text-align: center;
-      padding: 10px 0 25px;
-    }
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: rgba(30, 41, 59, 0.6);
-      border: 1px solid var(--border);
-      padding: 8px 18px;
-      border-radius: 30px;
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 12px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-    }
-    .status-desc {
-      font-size: 14px;
-      color: var(--muted);
-      font-weight: 400;
-      line-height: 1.4;
-    }
-
-    /* ── Today Record Details ── */
-    .today-time-grid {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .time-node {
-      flex: 1;
-      background: rgba(15, 23, 42, 0.4);
-      border: 1px solid rgba(255, 255, 255, 0.03);
-      border-radius: 16px;
-      padding: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      align-items: center;
-      text-align: center;
-    }
-    .time-node-label {
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--muted);
-      letter-spacing: 0.03em;
-      text-transform: uppercase;
-      margin-bottom: 2px;
-    }
-    .time-node-date {
-      font-size: 11px;
-      color: var(--muted);
-      font-weight: 500;
-      letter-spacing: -0.2px;
-    }
-    .time-node-value {
-      font-size: 28px;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-    }
-    .time-node-value.sleep-val { color: #A5B4FC; }
-    .time-node-value.wake-val { color: #FCD34D; }
-    
-    .time-arrow {
-      font-size: 18px;
-      color: var(--border);
-      font-weight: 300;
-    }
-
-    /* ── Condition Chips ── */
-    .condition-section {
-      margin-bottom: 24px;
-    }
-    .condition-label {
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--muted);
-      margin-bottom: 12px;
-      padding-left: 2px;
-    }
-    .condition-chips {
-      display: flex;
-      gap: 10px;
-    }
-    .condition-chip {
-      flex: 1;
-      height: 44px;
-      border: 1px solid var(--border);
-      background: rgba(30, 41, 59, 0.5);
-      color: var(--muted);
-      border-radius: 14px;
-      font-family: var(--font);
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .condition-chip:active {
-      transform: scale(0.97);
-    }
-    
-    /* Active condition states */
-    .condition-chip.active[data-cond="good"] {
-      background: rgba(34, 197, 94, 0.15);
-      border-color: var(--good);
-      color: #4ADE80;
-    }
-    .condition-chip.active[data-cond="normal"] {
-      background: rgba(250, 204, 21, 0.15);
-      border-color: var(--normal);
-      color: #FDE047;
-    }
-    .condition-chip.active[data-cond="bad"] {
-      background: rgba(239, 68, 110, 0.15);
-      border-color: var(--bad);
-      color: #FCA5A5;
-    }
-
-    /* ── Main Action CTA Button ── */
-    .bottom-button-wrapper {
+    /* ────────────────────────────────────────────────
+       BOTTOM CTA BUTTON
+       · #app-root의 마지막 flex item
+       · flex-shrink:0 으로 항상 하단에 고정
+       · safe-area-inset-bottom으로 홈 인디케이터 위에 배치
+    ──────────────────────────────────────────────── */
+    .btn-bar {
       flex-shrink: 0;
-      width: 100%;
-      background: linear-gradient(to top, var(--bg-end) 60%, transparent);
-      box-sizing: border-box;
-      padding: 12px 20px calc(16px + env(safe-area-inset-bottom));
-      z-index: 100;
+      padding: 12px 20px calc(var(--sab) + 16px);
+      padding-left: calc(var(--sal) + 20px);
+      padding-right: calc(var(--sar) + 20px);
+      background: linear-gradient(to top, var(--bg-end) 50%, transparent);
     }
     .cta-btn {
       width: 100%;
       height: 56px;
-      padding-bottom: 0;
       border: none;
       border-radius: 18px;
       background: var(--accent);
-      color: var(--accent-text);
+      color: #fff;
       font-family: var(--font);
       font-size: 16px;
       font-weight: 700;
@@ -324,238 +197,323 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-      box-shadow: 0 4px 20px rgba(129, 140, 248, 0.3);
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 20px rgba(129,140,248,0.35);
+      transition: all 0.2s ease;
     }
-    .cta-btn:hover {
-      background: var(--accent-hover);
-    }
-    .cta-btn:active {
-      transform: scale(0.97);
-      box-shadow: 0 2px 10px rgba(129, 140, 248, 0.2);
-    }
-    .cta-btn.wake-mode {
+    .cta-btn:active { transform: scale(0.97); }
+    .cta-btn.wake {
       background: var(--normal);
       color: #0B1020;
-      box-shadow: 0 4px 20px rgba(250, 204, 21, 0.3);
-    }
-    .cta-btn.wake-mode:hover {
-      background: #EAB308;
-    }
-    .cta-btn.wake-mode:active {
-      transform: scale(0.97);
-      box-shadow: 0 2px 10px rgba(250, 204, 21, 0.2);
+      box-shadow: 0 4px 20px rgba(250,204,21,0.35);
     }
 
-    /* ── View Sub Tabs (History) ── */
-    .sub-tab-container {
-      padding: 10px 20px 14px;
+    /* ────────────────────────────────────────────────
+       HOME VIEW: 콘텐츠 스타일
+    ──────────────────────────────────────────────── */
+    .live-clock {
+      text-align: center;
+      padding: 8px 0 20px;
+    }
+    .live-date-text {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .live-time-text {
+      font-size: 42px;
+      font-weight: 200;
+      letter-spacing: -1.5px;
+      line-height: 1.1;
+    }
+
+    .status-area {
+      text-align: center;
+      padding: 0 0 20px;
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(30,41,59,0.6);
+      border: 1px solid var(--border);
+      padding: 8px 18px;
+      border-radius: 30px;
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .status-desc {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    /* 카드 */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    .card-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .reset-btn {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 2px;
+      border-radius: 50%;
+      transition: color 0.2s;
+      display: flex;
+    }
+    .reset-btn:active { color: var(--bad); }
+
+    /* 취침/기상 시간 그리드 */
+    .time-grid {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .time-node {
+      flex: 1;
+      background: rgba(15,23,42,0.4);
+      border-radius: 14px;
+      padding: 12px;
+      text-align: center;
+    }
+    .time-node-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+    }
+    .time-node-date {
+      font-size: 10px;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+    .time-node-val {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+    .time-node-val.sleep { color: #A5B4FC; }
+    .time-node-val.wake  { color: #FCD34D; }
+    .time-arrow { font-size: 16px; color: var(--border); }
+
+    .today-extra {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,0.04);
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    /* 컨디션 칩 */
+    .cond-section { margin-bottom: 16px; }
+    .cond-section-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 10px;
+      padding-left: 2px;
+    }
+    .cond-chips { display: flex; gap: 8px; }
+    .cond-chip {
+      flex: 1;
+      height: 44px;
+      border: 1px solid var(--border);
+      background: rgba(30,41,59,0.5);
+      color: var(--muted);
+      border-radius: 14px;
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: all 0.2s ease;
+    }
+    .cond-chip:active { transform: scale(0.96); }
+    .cond-chip.on[data-v="good"]   { background: rgba(34,197,94,0.15); border-color: var(--good);   color: #4ADE80; }
+    .cond-chip.on[data-v="normal"] { background: rgba(250,204,21,0.15); border-color: var(--normal); color: #FDE047; }
+    .cond-chip.on[data-v="bad"]    { background: rgba(239,68,68,0.15);  border-color: var(--bad);    color: #FCA5A5; }
+
+    /* 최근 기록 카드 */
+    .recent-card { border-color: rgba(255,255,255,0.05); }
+
+    /* ────────────────────────────────────────────────
+       HISTORY VIEW
+    ──────────────────────────────────────────────── */
+    .sub-tabs {
+      flex-shrink: 0;
       display: flex;
       gap: 8px;
+      padding: 8px 20px 12px;
+      padding-left: calc(var(--sal) + 20px);
+      padding-right: calc(var(--sar) + 20px);
     }
-    .sub-tab-btn {
+    .sub-tab {
       flex: 1;
-      height: 38px;
+      height: 36px;
       border: 1px solid var(--border);
-      background: rgba(30, 41, 59, 0.4);
+      background: rgba(30,41,59,0.4);
       color: var(--muted);
-      border-radius: 12px;
+      border-radius: 10px;
       font-family: var(--font);
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s ease;
     }
-    .sub-tab-btn.active {
+    .sub-tab.on {
       background: var(--surface);
       border-color: var(--accent);
       color: var(--text);
     }
 
-    /* ── History Daily View ── */
-    .history-list {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .history-card {
+    /* 일별 카드 */
+    .history-list { display: flex; flex-direction: column; gap: 10px; }
+    .h-card {
       background: var(--surface);
       border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .h-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .h-card-date { font-size: 13px; font-weight: 600; color: var(--muted); }
+    .h-card-del {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 2px;
+      border-radius: 50%;
+      display: flex;
+      transition: color 0.2s;
+    }
+    .h-card-del:active { color: var(--bad); }
+    .h-card-mid {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .h-card-time { font-size: 18px; font-weight: 800; }
+    .h-card-dur {
+      font-size: 13px;
+      font-weight: 700;
+      padding: 5px 12px;
       border-radius: 20px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .h-card-dur.good   { color: var(--good); }
+    .h-card-dur.normal { color: var(--text); }
+    .h-card-dur.bad    { color: var(--bad); }
+    .h-card-bot {
+      display: flex;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      padding-top: 10px;
+      border-top: 1px solid rgba(255,255,255,0.04);
+    }
+
+    /* 주별 */
+    .weekly-list { display: flex; flex-direction: column; gap: 12px; }
+    .w-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
       padding: 18px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
-      animation: slideIn 0.3s ease;
-      position: relative;
+      gap: 10px;
     }
-    .history-card-header {
-      display: flex;
-      justify-content: space-between;
+    .w-card-title { font-size: 14px; font-weight: 800; color: var(--accent); }
+    .w-card-body  { display: flex; justify-content: space-between; align-items: flex-end; }
+    .w-card-dur   { font-size: 24px; font-weight: 200; }
+    .w-card-conds { display: flex; gap: 6px; }
+    .w-chip {
+      display: inline-flex;
       align-items: center;
-    }
-    .history-card-date {
-      font-size: 13.5px;
-      font-weight: 600;
-      color: var(--muted);
-    }
-    .history-card-delete {
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      color: var(--muted);
-      padding: 4px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-      transition: all 0.2s ease;
-    }
-    .history-card-delete:hover {
-      background: rgba(239, 68, 68, 0.12);
-      color: var(--bad);
-    }
-    .history-card-body {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .history-card-time {
-      font-size: 19px;
-      font-weight: 800;
-      color: var(--text);
-    }
-    .history-card-time span.time-highlight {
-      color: var(--text);
-      font-weight: 800;
-    }
-    .history-card-dur {
-      font-size: 14px;
-      font-weight: 700;
-      background: rgba(255, 255, 255, 0.04);
-      padding: 6px 14px;
-      border-radius: 30px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-    .history-card-dur.good { color: var(--good); }
-    .history-card-dur.normal { color: var(--text); }
-    .history-card-dur.bad { color: var(--bad); }
-
-    .history-card-conditions {
-      display: flex;
-      gap: 12px;
-      font-size: 12px;
-      color: var(--muted);
-      border-top: 1px solid rgba(255, 255, 255, 0.03);
-      padding-top: 12px;
-    }
-    .cond-item {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-
-    /* ── Weekly View ── */
-    .weekly-list {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    .weekly-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    }
-    .weekly-card-title {
-      font-size: 15px;
-      font-weight: 800;
-      color: var(--accent);
-    }
-    .weekly-card-body {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-    }
-    .weekly-card-left {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .weekly-card-sub {
+      gap: 3px;
+      padding: 3px 8px;
       font-size: 11px;
-      color: var(--muted);
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-    }
-    .weekly-card-dur {
-      font-size: 26px;
-      font-weight: 200;
-      color: var(--text);
-    }
-    .weekly-card-cond-box {
-      display: flex;
-      gap: 8px;
-      background: rgba(15, 23, 42, 0.2);
-      border-radius: 12px;
-      padding: 8px 12px;
-      font-size: 12px;
       font-weight: 600;
+      border-radius: 6px;
     }
+    .w-chip.good   { background: rgba(34,197,94,0.1);  color: #4ADE80; }
+    .w-chip.normal { background: rgba(250,204,21,0.1); color: #FDE047; }
+    .w-chip.bad    { background: rgba(239,68,68,0.1);  color: #FCA5A5; }
 
-    /* ── Monthly Calendar View ── */
-    .monthly-summary-card {
+    /* 월별 */
+    .monthly-summary {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 20px;
-      margin-bottom: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
+      border-radius: 18px;
+      padding: 18px;
+      margin-bottom: 14px;
     }
-    .monthly-summary-top {
+    .monthly-avg-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .monthly-avg-val   { font-size: 30px; font-weight: 200; margin: 4px 0 14px; }
+    .monthly-cond-row  { display: flex; gap: 8px; }
+    .m-mini {
+      flex: 1;
       display: flex;
       flex-direction: column;
+      align-items: center;
       gap: 4px;
+      padding: 10px 4px;
+      border-radius: 10px;
+      background: rgba(15,23,42,0.2);
     }
-    .monthly-summary-dur {
-      font-size: 32px;
-      font-weight: 200;
-      color: var(--text);
-    }
-    .monthly-summary-cond-row {
-      display: flex;
-      gap: 12px;
-      border-top: 1px solid rgba(255, 255, 255, 0.05);
-      padding-top: 14px;
-      font-size: 13px;
-      font-weight: 600;
-    }
+    .m-mini-label { font-size: 10px; font-weight: 600; color: var(--muted); }
+    .m-mini-val   { font-size: 17px; font-weight: 800; }
+    .m-mini.good  .m-mini-val { color: #4ADE80; }
+    .m-mini.normal .m-mini-val { color: #FDE047; }
+    .m-mini.bad   .m-mini-val { color: #FCA5A5; }
 
-    .calendar-navigation {
+    /* 캘린더 */
+    .cal-nav {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin: 10px 0 16px;
-      padding: 0 4px;
+      margin-bottom: 12px;
+      padding: 0 2px;
     }
-    .calendar-title {
-      font-size: 18px;
-      font-weight: 800;
-      color: var(--text);
-    }
-    .calendar-nav-btn {
-      width: 36px;
-      height: 36px;
+    .cal-nav-btn {
+      width: 34px;
+      height: 34px;
       border: 1px solid var(--border);
-      background: rgba(30, 41, 59, 0.4);
+      background: rgba(30,41,59,0.4);
       color: var(--text);
       border-radius: 50%;
       cursor: pointer;
@@ -563,170 +521,133 @@
       align-items: center;
       justify-content: center;
       font-size: 12px;
-      transition: all 0.2s ease;
+      transition: all 0.2s;
     }
-    .calendar-nav-btn:active {
-      transform: scale(0.9);
-      background: var(--surface);
-    }
+    .cal-nav-btn:active { transform: scale(0.9); }
+    .cal-title { font-size: 17px; font-weight: 800; }
 
-    .calendar-grid {
+    .cal-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      gap: 4px;
-      background: rgba(30, 41, 59, 0.25);
+      gap: 3px;
+      background: rgba(30,41,59,0.25);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 8px;
-      width: 100%;
-      box-sizing: border-box;
+      border-radius: 14px;
+      padding: 6px;
     }
-    .calendar-day-header {
+    .cal-day-hdr {
       text-align: center;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
       color: var(--muted);
-      padding: 4px 0;
+      padding: 3px 0;
     }
-    .calendar-cell {
-      aspect-ratio: 0.95;
-      background: rgba(30, 41, 59, 0.35);
-      border-radius: 8px;
+    .cal-cell {
+      aspect-ratio: 0.9;
+      background: rgba(30,41,59,0.35);
+      border-radius: 7px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: 4px 2px;
-      min-height: 44px;
-      border: 1px solid rgba(255, 255, 255, 0.01);
-      box-sizing: border-box;
+      padding: 3px 2px;
+      min-height: 42px;
+      border: 1px solid transparent;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.15s;
     }
-    .calendar-cell:active {
-      transform: scale(0.95);
+    .cal-cell:active { transform: scale(0.93); }
+    .cal-cell.empty  { background: transparent; cursor: default; }
+    .cal-cell.has-data {
+      background: rgba(129,140,248,0.08);
+      border-color: rgba(129,140,248,0.15);
     }
-    .calendar-cell.selected {
-      border: 1.5px solid var(--accent);
-      background: rgba(129, 140, 248, 0.25) !important;
-    }
-    .calendar-cell.empty {
-      background: transparent;
-      border: none;
-    }
-    .calendar-cell.has-data {
-      background: rgba(129, 140, 248, 0.08);
-      border: 1px solid rgba(129, 140, 248, 0.15);
-    }
-    .calendar-date-num {
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--muted);
-    }
-    .calendar-cell.has-data .calendar-date-num {
-      color: var(--text);
-    }
-    .calendar-cell.today {
-      border: 1.5px solid var(--accent);
-      box-shadow: 0 0 10px rgba(129, 140, 248, 0.2);
-    }
-    .calendar-cell-time {
-      font-size: 9px;
-      font-weight: 700;
-      color: var(--text);
-      text-align: center;
-      margin-top: 1px;
-      white-space: nowrap;
-    }
-    .calendar-cell-emoji {
-      font-size: 9px;
-      text-align: center;
-      line-height: 1;
-      margin-bottom: 1px;
-    }
+    .cal-cell.today { border-color: var(--accent); box-shadow: 0 0 8px rgba(129,140,248,0.2); }
+    .cal-cell.selected { border-color: var(--accent) !important; background: rgba(129,140,248,0.22) !important; }
+    .cal-cell.cond-good   { background: rgba(34,197,94,0.2) !important;  border-color: rgba(34,197,94,0.4) !important; }
+    .cal-cell.cond-normal { background: rgba(250,204,21,0.2) !important; border-color: rgba(250,204,21,0.4) !important; }
+    .cal-cell.cond-bad    { background: rgba(239,68,68,0.2) !important;  border-color: rgba(239,68,68,0.4) !important; }
+    .cal-num  { font-size: 10px; font-weight: 700; color: var(--muted); }
+    .cal-cell.has-data .cal-num { color: var(--text); }
+    .cal-cell.cond-good   .cal-num { color: #86EFAC; }
+    .cal-cell.cond-normal .cal-num { color: #FDE047; }
+    .cal-cell.cond-bad    .cal-num { color: #FCA5A5; }
+    .cal-time  { font-size: 8px; font-weight: 700; text-align: center; color: var(--text); white-space: nowrap; }
+    .cal-emoji { font-size: 8px; text-align: center; }
 
-    /* ── Empty State ── */
+    .cal-detail {
+      margin-top: 14px;
+      background: rgba(30,41,59,0.45);
+      border: 1px solid rgba(129,140,248,0.25);
+      border-radius: 16px;
+      padding: 16px;
+    }
+    .cal-detail-title { font-size: 13px; font-weight: 700; color: var(--accent); margin-bottom: 10px; }
+    .cal-detail-body  { font-size: 13px; color: var(--text); display: flex; flex-direction: column; gap: 6px; line-height: 1.5; }
+
+    /* 빈 상태 */
     .empty-state {
       text-align: center;
       padding: 60px 0;
       color: var(--muted);
       font-size: 14px;
-      font-weight: 400;
     }
-    .empty-state span {
-      display: block;
-      font-size: 36px;
-      margin-bottom: 12px;
-    }
+    .empty-state-icon { font-size: 36px; margin-bottom: 12px; display: block; }
 
-    /* ── Custom Modal Popup ── */
+    /* ────────────────────────────────────────────────
+       MODALS (position:fixed — app-root 독립)
+    ──────────────────────────────────────────────── */
     .modal-overlay {
       display: none;
       position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(7, 10, 20, 0.85);
+      inset: 0;
+      background: rgba(7,10,20,0.85);
       backdrop-filter: blur(8px);
-      z-index: 200;
+      z-index: 300;
       align-items: center;
       justify-content: center;
-      padding: 20px;
+      padding: 24px;
       opacity: 0;
-      transition: opacity 0.25s ease;
+      transition: opacity 0.2s ease;
     }
-    .modal-overlay.active {
+    .modal-overlay.show {
       display: flex;
       opacity: 1;
     }
-    .modal-card {
+    .modal-box {
       width: 100%;
       max-width: 320px;
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 24px;
+      border-radius: 22px;
       padding: 24px;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-      transform: scale(0.9);
-      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+      transform: scale(0.92);
+      transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
       text-align: center;
     }
-    .modal-overlay.active .modal-card {
-      transform: scale(1);
-    }
+    .modal-overlay.show .modal-box { transform: scale(1); }
     .modal-title {
       font-size: 18px;
       font-weight: 800;
-      color: var(--text);
       margin-bottom: 8px;
     }
-    .modal-desc {
+    .modal-desc  { font-size: 13px; color: var(--muted); line-height: 1.5; margin-bottom: 18px; }
+    .modal-time  { font-size: 38px; font-weight: 200; letter-spacing: -1px; margin-bottom: 20px; }
+    .modal-dur   {
       font-size: 13px;
       color: var(--muted);
-      line-height: 1.5;
+      background: rgba(15,23,42,0.3);
+      padding: 8px 12px;
+      border-radius: 10px;
+      margin-top: -10px;
       margin-bottom: 20px;
     }
-    .modal-time-display {
-      font-size: 38px;
-      font-weight: 200;
-      color: var(--text);
-      margin-bottom: 24px;
-      letter-spacing: -1px;
-    }
-    .modal-meta-row {
-      font-size: 13px;
-      color: var(--muted);
-      background: rgba(15, 23, 42, 0.3);
-      padding: 10px 14px;
-      border-radius: 12px;
-      margin-top: -12px;
-      margin-bottom: 24px;
-    }
-    .modal-buttons {
-      display: flex;
-      gap: 10px;
-    }
-    .modal-btn {
+    .modal-icon  { font-size: 36px; margin-bottom: 14px; }
+    .modal-btns  { display: flex; gap: 10px; }
+    .m-btn {
       flex: 1;
-      height: 48px;
-      border-radius: 14px;
+      height: 46px;
+      border-radius: 13px;
       border: none;
       font-family: var(--font);
       font-size: 14px;
@@ -734,1765 +655,822 @@
       cursor: pointer;
       transition: all 0.2s;
     }
-    .modal-btn-cancel {
-      background: rgba(255, 255, 255, 0.05);
+    .m-btn:active { transform: scale(0.97); }
+    .m-btn-cancel {
+      background: rgba(255,255,255,0.05);
       border: 1px solid var(--border);
       color: var(--muted);
     }
-    .modal-btn-cancel:active {
-      background: rgba(255, 255, 255, 0.08);
-    }
-    .modal-btn-action {
+    .m-btn-ok {
       background: var(--accent);
-      color: var(--accent-text);
-      box-shadow: 0 4px 15px rgba(129, 140, 248, 0.25);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(129,140,248,0.25);
     }
-    .modal-btn-action:active {
-      background: var(--accent-hover);
-      transform: scale(0.97);
+    .m-btn-danger {
+      background: var(--bad);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(239,68,68,0.25);
     }
 
-    /* ── Completed Toast Card ── */
+    /* 완료 토스트 */
     .toast-overlay {
       display: none;
       position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(7, 10, 20, 0.8);
+      inset: 0;
+      background: rgba(7,10,20,0.8);
       backdrop-filter: blur(4px);
-      z-index: 210;
+      z-index: 310;
       align-items: center;
       justify-content: center;
-      padding: 20px;
+      padding: 24px;
       opacity: 0;
       transition: opacity 0.2s ease;
     }
-    .toast-overlay.active {
-      display: flex;
-      opacity: 1;
-    }
-    .toast-card {
+    .toast-overlay.show { display: flex; opacity: 1; }
+    .toast-box {
       width: 100%;
       max-width: 300px;
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 24px;
+      border-radius: 22px;
       padding: 24px;
       text-align: center;
-      box-shadow: 0 12px 35px rgba(0,0,0,0.4);
-      transform: translateY(15px);
-      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 12px 35px rgba(0,0,0,0.5);
     }
-    .toast-overlay.active .toast-card {
-      transform: translateY(0);
-    }
-    .toast-icon {
-      font-size: 32px;
-      margin-bottom: 12px;
-      animation: bounce 0.6s ease;
-    }
-    .toast-title {
-      font-size: 16px;
-      font-weight: 800;
-      color: var(--text);
-      margin-bottom: 6px;
-    }
-    .toast-desc {
-      font-size: 13px;
-      color: var(--muted);
-      margin-bottom: 20px;
-    }
+    .toast-icon  { font-size: 32px; margin-bottom: 10px; }
+    .toast-title { font-size: 16px; font-weight: 800; margin-bottom: 6px; }
+    .toast-desc  { font-size: 13px; color: var(--muted); margin-bottom: 18px; }
     .toast-btn {
       width: 100%;
       height: 44px;
       border: none;
       border-radius: 12px;
       background: var(--accent);
-      color: var(--accent-text);
+      color: #fff;
       font-family: var(--font);
       font-size: 14px;
       font-weight: 700;
       cursor: pointer;
-      transition: background 0.2s;
     }
-    .toast-btn:active {
-      background: var(--accent-hover);
-    }
-
-    @keyframes bounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-8px); }
-    }
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .live-clock-container {
-      text-align: center;
-      padding: 10px 0 15px;
-    }
-    .live-date {
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--muted);
-      letter-spacing: -0.01em;
-      margin-bottom: 6px;
-    }
-    .live-time {
-      font-size: 42px;
-      font-weight: 200;
-      color: var(--text);
-      letter-spacing: -1.5px;
-      line-height: 1.1;
-    }
-
-    /* ── Responsive Calendar Adjustments for Mobile (iPhone SE/12/etc) ── */
-    @media (max-width: 375px) {
-      .scroll-section {
-        padding: 12px;
-      }
-      .calendar-grid {
-        padding: 6px;
-        gap: 2px;
-      }
-      .calendar-cell {
-        padding: 2px 1px;
-        min-height: 38px;
-      }
-      .calendar-cell-time {
-        font-size: 8px !important;
-      }
-      .calendar-date-num {
-        font-size: 9.5px !important;
-      }
-    }
-
-    /* ── Calendar Heatmap Classes ── */
-    .calendar-cell.cond-good {
-      background: rgba(34, 197, 94, 0.25) !important;
-      border-color: rgba(34, 197, 94, 0.45) !important;
-    }
-    .calendar-cell.cond-good .calendar-date-num {
-      color: #86EFAC !important;
-    }
-    
-    .calendar-cell.cond-normal {
-      background: rgba(250, 204, 21, 0.25) !important;
-      border-color: rgba(250, 204, 21, 0.45) !important;
-    }
-    .calendar-cell.cond-normal .calendar-date-num {
-      color: #FDE047 !important;
-    }
-    
-    .calendar-cell.cond-bad {
-      background: rgba(239, 68, 68, 0.25) !important;
-      border-color: rgba(239, 68, 68, 0.45) !important;
-    }
-    .calendar-cell.cond-bad .calendar-date-num {
-      color: #FCA5A5 !important;
-    }
-
-    /* ── Inline Edit Styles ── */
-    .history-card-edit {
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      color: var(--muted);
-      padding: 4px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-      transition: all 0.2s ease;
-    }
-    .history-card-edit:hover {
-      background: rgba(129, 140, 248, 0.12);
+    .toast-link {
+      display: block;
+      margin-top: 14px;
+      font-size: 13px;
       color: var(--accent);
-    }
-    .today-reset-btn {
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      color: var(--muted);
-      padding: 4px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-      transition: all 0.2s ease;
-    }
-    .today-reset-btn:hover {
-      background: rgba(239, 68, 68, 0.12);
-      color: var(--bad);
-    }
-    .today-reset-btn:active {
-      transform: scale(0.9);
-    }
-    .edit-cond-row {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      background: rgba(15, 23, 42, 0.25);
-      border-radius: 12px;
-      padding: 12px;
-      margin-top: 6px;
-      border: 1px dashed var(--border);
-    }
-    .edit-cond-group {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .edit-cond-label {
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--muted);
-    }
-    .edit-cond-chips-container {
-      display: flex;
-      gap: 6px;
-    }
-    .edit-chip {
-      flex: 1;
-      height: 32px;
-      border: 1px solid var(--border);
-      background: rgba(30, 41, 59, 0.6);
-      color: var(--muted);
-      border-radius: 8px;
-      font-family: var(--font);
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s ease;
-    }
-    .edit-chip.active[data-cond="good"] {
-      background: rgba(34, 197, 94, 0.2);
-      border-color: var(--good);
-      color: #4ADE80;
-    }
-    .edit-chip.active[data-cond="normal"] {
-      background: rgba(250, 204, 21, 0.2);
-      border-color: var(--normal);
-      color: #FDE047;
-    }
-    .edit-chip.active[data-cond="bad"] {
-      background: rgba(239, 68, 68, 0.2);
-      border-color: var(--bad);
-      color: #FCA5A5;
-    }
-    .edit-actions {
-      display: flex;
-      gap: 8px;
-      margin-top: 6px;
-      justify-content: flex-end;
-    }
-    .edit-action-btn {
-      padding: 6px 14px;
-      font-size: 12px;
-      font-weight: 700;
-      border-radius: 8px;
-      cursor: pointer;
-      border: none;
-      font-family: var(--font);
-      transition: all 0.2s ease;
-    }
-    .edit-action-btn.save {
-      background: var(--accent);
-      color: var(--accent-text);
-    }
-    .edit-action-btn.save:active {
-      background: var(--accent-hover);
-    }
-    .edit-action-btn.cancel {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--border);
-      color: var(--muted);
-    }
-    .edit-action-btn.cancel:active {
-      background: rgba(255, 255, 255, 0.08);
-    }
-
-    /* ── Analysis Toggle Link ── */
-    .analysis-toggle-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      color: var(--accent);
-      font-size: 12.5px;
       font-weight: 700;
       text-decoration: none;
       cursor: pointer;
-      margin-top: 6px;
-      transition: color 0.2s ease;
-    }
-    .analysis-toggle-link:hover {
-      color: var(--accent-hover);
-    }
-    .analysis-details-wrapper {
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.3s ease-out;
-      margin-top: 0;
-    }
-    .analysis-details-wrapper.open {
-      max-height: 800px;
-      margin-top: 12px;
-      border-top: 1px solid rgba(255, 255, 255, 0.05);
-      padding-top: 12px;
     }
 
-    /* ── Weekly Condition Chips ── */
-    .weekly-cond-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 4px 10px;
-      font-size: 11px;
-      font-weight: 600;
-      border-radius: 8px;
-      border: 1px solid transparent;
-    }
-    .weekly-cond-chip strong {
-      font-weight: 800;
-    }
-    .chip-good {
-      background: rgba(34, 197, 94, 0.1) !important;
-      border-color: rgba(34, 197, 94, 0.25) !important;
-      color: #4ADE80 !important;
-    }
-    .chip-normal {
-      background: rgba(250, 204, 21, 0.1) !important;
-      border-color: rgba(250, 204, 21, 0.25) !important;
-      color: #FDE047 !important;
-    }
-    .chip-bad {
-      background: rgba(239, 68, 68, 0.1) !important;
-      border-color: rgba(239, 68, 68, 0.25) !important;
-      color: #FCA5A5 !important;
-    }
-
-    /* ── Monthly Mini Cards ── */
-    .monthly-mini-cards-grid {
-      display: flex;
-      gap: 8px;
-      justify-content: space-between;
-      margin-top: 0;
-    }
-    .monthly-mini-card {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      padding: 10px 6px;
-      border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.03);
-      background: rgba(15, 23, 42, 0.2);
-      transition: transform 0.2s ease;
-    }
-    .monthly-mini-card-label {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--muted);
-    }
-    .monthly-mini-card.chip-good .monthly-mini-card-label {
-      color: #4ADE80;
-    }
-    .monthly-mini-card.chip-normal .monthly-mini-card-label {
-      color: #FDE047;
-    }
-    .monthly-mini-card.chip-bad .monthly-mini-card-label {
-      color: #FCA5A5;
-    }
-    .mini-card-count {
-      font-size: 18px;
-      font-weight: 800;
+    /* 소형 화면 대응 */
+    @media (max-width: 375px) {
+      .cal-cell { min-height: 36px; padding: 2px 1px; }
+      .cal-time  { font-size: 7px; }
+      .cal-num   { font-size: 9px; }
     }
   </style>
 </head>
 <body>
 
-  <!-- App Root: iOS PWA 풀스크린 레이아웃 래퍼 -->
-  <div id="app-root">
+<!-- ════════════════════════════════════════════════
+     #APP-ROOT: 모든 레이아웃의 기준. position:fixed inset:0
+     iOS PWA에서 화면 끝까지 꽉 채움.
+═══════════════════════════════════════════════════ -->
+<div id="app-root">
 
-  <!-- App Header -->
-  <div class="app-header">
-    <div class="app-title" id="app-header-title">수면 기록</div>
-    <button id="view-toggle-btn" class="toggle-view-btn" onclick="toggleMainView()">히스토리</button>
-  </div>
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="app-title" id="hdr-title">수면 기록</div>
+    <button class="toggle-btn" id="toggle-btn" onclick="toggleView()">히스토리</button>
+  </header>
 
+  <!-- VIEW CONTAINER -->
   <div class="view-container">
-    
-    <!-- HOME VIEW -->
-    <div class="view active" id="view-home">
-      <div class="scroll-section main-content">
-        
-        <!-- Live Date & Clock Display -->
-        <div class="live-clock-container">
-          <div class="live-date" id="live-date">--. --. -- -요일</div>
-          <div class="live-time" id="live-time">--:--:--</div>
+
+    <!-- ── HOME VIEW ── -->
+    <section class="view active" id="view-home">
+      <div class="scroll-area home-scroll" id="home-scroll">
+
+        <!-- 시계 -->
+        <div class="live-clock">
+          <div class="live-date-text" id="live-date">-- --. --. -- -요일</div>
+          <div class="live-time-text" id="live-time">--:--:--</div>
         </div>
 
-        <!-- Status Area -->
+        <!-- 상태 뱃지 -->
         <div class="status-area">
-          <div class="status-badge" id="status-badge">
+          <div class="status-badge">
             <span id="status-icon">🌤</span>
             <span id="status-text">생활 중</span>
           </div>
           <div class="status-desc" id="status-desc">아직 수면 기록을 시작하지 않았어요</div>
         </div>
 
-        <!-- Today Record Card -->
-        <div class="card" id="today-record-card">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <div class="card-title" style="margin-bottom: 0;">오늘의 기록</div>
-            <button id="today-reset-btn" class="today-reset-btn" onclick="resetTodayRecord()" title="기록 초기화" style="display: none;">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+        <!-- 오늘의 기록 카드 -->
+        <div class="card">
+          <div class="card-label">
+            <span>오늘의 기록</span>
+            <button class="reset-btn" id="today-reset-btn" onclick="confirmReset()" style="display:none" title="초기화">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
                 <path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
               </svg>
             </button>
           </div>
-          <div class="today-time-grid" id="today-time-grid">
+          <div class="time-grid">
             <div class="time-node">
-              <span class="time-node-label">취침시간</span>
-              <span class="time-node-date" id="today-sleep-date">--.--.-- (-요일)</span>
-              <span class="time-node-value sleep-val" id="today-sleep">--:--</span>
+              <div class="time-node-label">취침시간</div>
+              <div class="time-node-date" id="today-sleep-date">--.--.--</div>
+              <div class="time-node-val sleep" id="today-sleep">--:--</div>
             </div>
-            <span class="time-arrow">→</span>
+            <div class="time-arrow">→</div>
             <div class="time-node">
-              <span class="time-node-label">기상시간</span>
-              <span class="time-node-date" id="today-wake-date">--.--.-- (-요일)</span>
-              <span class="time-node-value wake-val" id="today-wake">--:--</span>
+              <div class="time-node-label">기상시간</div>
+              <div class="time-node-date" id="today-wake-date">--.--.--</div>
+              <div class="time-node-val wake"  id="today-wake">--:--</div>
             </div>
           </div>
-          <div id="today-details" style="font-size: 12px; color: var(--muted); border-top: 1px solid rgba(255, 255, 255, 0.03); padding-top: 10px; display: none; flex-direction: column; gap: 6px; text-align: left; margin-top: 12px;">
-            <span id="today-details-duration">⏳ <strong>수면시간:</strong> --시간 --분</span>
-            <span id="today-details-conditions">💤 <strong>컨디션 변화:</strong> --</span>
+          <div class="today-extra" id="today-extra" style="display:none">
+            <span id="today-dur"></span>
+            <span id="today-cond"></span>
           </div>
-          <div id="today-empty-msg" style="display: none; font-size: 13.5px; color: var(--muted); text-align: center; padding: 10px 0; line-height: 1.5;">
-            💤 오늘 기록된 수면이 없습니다.<br>하단의 <strong>'지금 잘래요'</strong> 버튼을 눌러 기록을 시작해보세요!
+          <div id="today-empty" style="font-size:13px;color:var(--muted);text-align:center;padding:10px 0;line-height:1.5;display:none">
+            💤 오늘 기록된 수면이 없습니다.<br>하단 버튼을 눌러 시작해보세요!
           </div>
         </div>
 
-        <!-- Sleep Condition Selection (Active during Awake status) -->
-        <div class="condition-section" id="sleep-condition-area">
-          <div class="condition-label">취침 전 컨디션</div>
-          <div class="condition-chips" id="sleep-condition-chips">
-            <button class="condition-chip" data-cond="good" onclick="selectCondition('sleep', 'good')">🟢 좋음</button>
-            <button class="condition-chip" data-cond="normal" onclick="selectCondition('sleep', 'normal')">🟡 보통</button>
-            <button class="condition-chip" data-cond="bad" onclick="selectCondition('sleep', 'bad')">🔴 나쁨</button>
+        <!-- 취침 전 컨디션 -->
+        <div class="cond-section" id="sleep-cond-area">
+          <div class="cond-section-label">취침 전 컨디션</div>
+          <div class="cond-chips">
+            <button class="cond-chip" data-v="good"   onclick="setCondition('sleep','good')">🟢 좋음</button>
+            <button class="cond-chip" data-v="normal" onclick="setCondition('sleep','normal')">🟡 보통</button>
+            <button class="cond-chip" data-v="bad"    onclick="setCondition('sleep','bad')">🔴 나쁨</button>
           </div>
         </div>
 
-        <!-- Wake Condition Selection (Active during Sleeping status) -->
-        <div class="condition-section" id="wake-condition-area" style="display: none;">
-          <div class="condition-label">기상 후 컨디션</div>
-          <div class="condition-chips" id="wake-condition-chips">
-            <button class="condition-chip" data-cond="good" onclick="selectCondition('wake', 'good')">🟢 좋음</button>
-            <button class="condition-chip" data-cond="normal" onclick="selectCondition('wake', 'normal')">🟡 보통</button>
-            <button class="condition-chip" data-cond="bad" onclick="selectCondition('wake', 'bad')">🔴 나쁨</button>
+        <!-- 기상 후 컨디션 -->
+        <div class="cond-section" id="wake-cond-area" style="display:none">
+          <div class="cond-section-label">기상 후 컨디션</div>
+          <div class="cond-chips">
+            <button class="cond-chip" data-v="good"   onclick="setCondition('wake','good')">🟢 좋음</button>
+            <button class="cond-chip" data-v="normal" onclick="setCondition('wake','normal')">🟡 보통</button>
+            <button class="cond-chip" data-v="bad"    onclick="setCondition('wake','bad')">🔴 나쁨</button>
           </div>
         </div>
 
-
-
-        <!-- Recent Record Card -->
-        <div class="card" id="recent-record-card" style="display: none; border-color: rgba(255,255,255,0.05); margin-top: 24px;">
-          <div class="card-title" style="margin-bottom: 12px;">최근 수면 기록</div>
-          <div class="today-time-grid" style="margin-bottom: 12px;">
+        <!-- 최근 수면 기록 -->
+        <div class="card recent-card" id="recent-card" style="display:none">
+          <div class="card-label">최근 수면 기록</div>
+          <div class="time-grid" style="margin-bottom:10px">
             <div class="time-node">
-              <span class="time-node-label">취침시간</span>
-              <span class="time-node-date" id="recent-sleep-date">--.--.-- (-요일)</span>
-              <span class="time-node-value sleep-val" id="recent-sleep">--:--</span>
+              <div class="time-node-label">취침시간</div>
+              <div class="time-node-date" id="recent-sleep-date">--.--.--</div>
+              <div class="time-node-val sleep" id="recent-sleep">--:--</div>
             </div>
-            <span class="time-arrow">→</span>
+            <div class="time-arrow">→</div>
             <div class="time-node">
-              <span class="time-node-label">기상시간</span>
-              <span class="time-node-date" id="recent-wake-date">--.--.-- (-요일)</span>
-              <span class="time-node-value wake-val" id="recent-wake">--:--</span>
+              <div class="time-node-label">기상시간</div>
+              <div class="time-node-date" id="recent-wake-date">--.--.--</div>
+              <div class="time-node-val wake"  id="recent-wake">--:--</div>
             </div>
           </div>
-          <div id="recent-details" style="font-size: 12px; color: var(--muted); border-top: 1px solid rgba(255, 255, 255, 0.03); padding-top: 10px; display: flex; flex-direction: column; gap: 6px; text-align: left;">
-            <!-- Duration and conditions dynamically added here -->
+          <div class="today-extra" id="recent-extra"></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ── HISTORY VIEW ── -->
+    <section class="view" id="view-history">
+      <!-- 서브탭 -->
+      <div class="sub-tabs">
+        <button class="sub-tab on" id="tab-daily"   onclick="switchSubTab('daily')">일별</button>
+        <button class="sub-tab"    id="tab-weekly"  onclick="switchSubTab('weekly')">주별</button>
+        <button class="sub-tab"    id="tab-monthly" onclick="switchSubTab('monthly')">월별</button>
+      </div>
+      <!-- 스크롤 영역 -->
+      <div class="scroll-area history-scroll" id="history-scroll">
+
+        <div id="sub-daily"   class="history-list"></div>
+        <div id="sub-weekly"  class="weekly-list"  style="display:none"></div>
+        <div id="sub-monthly" style="display:none">
+          <!-- 월간 요약 -->
+          <div class="monthly-summary">
+            <div class="monthly-avg-label">월간 평균 수면시간</div>
+            <div class="monthly-avg-val" id="monthly-avg">--시간 --분</div>
+            <div class="monthly-cond-row">
+              <div class="m-mini good">
+                <div class="m-mini-label">🟢 좋음</div>
+                <div class="m-mini-val" id="m-good">--</div>
+              </div>
+              <div class="m-mini normal">
+                <div class="m-mini-label">🟡 보통</div>
+                <div class="m-mini-val" id="m-normal">--</div>
+              </div>
+              <div class="m-mini bad">
+                <div class="m-mini-label">🔴 나쁨</div>
+                <div class="m-mini-val" id="m-bad">--</div>
+              </div>
+            </div>
+          </div>
+          <!-- 캘린더 -->
+          <div class="cal-nav">
+            <button class="cal-nav-btn" onclick="changeMonth(-1)">◀</button>
+            <div class="cal-title" id="cal-title">2026년 6월</div>
+            <button class="cal-nav-btn" onclick="changeMonth(1)">▶</button>
+          </div>
+          <div class="cal-grid" id="cal-grid"></div>
+          <div class="cal-detail" id="cal-detail" style="display:none">
+            <div class="cal-detail-title" id="cal-detail-date"></div>
+            <div class="cal-detail-body" id="cal-detail-body"></div>
           </div>
         </div>
 
       </div>
-    </div>
-
-    <!-- HISTORY VIEW -->
-    <div class="view" id="view-history">
-      
-      <!-- Sub Navigation Filters -->
-      <div class="sub-tab-container">
-        <button class="sub-tab-btn active" id="sub-tab-daily" onclick="switchSubTab('daily')">일별</button>
-        <button class="sub-tab-btn" id="sub-tab-weekly" onclick="switchSubTab('weekly')">주별</button>
-        <button class="sub-tab-btn" id="sub-tab-monthly" onclick="switchSubTab('monthly')">월별</button>
-      </div>
-
-      <!-- Scrollable Contents for History Sub Tabs -->
-      <div class="scroll-section" id="history-scroll-content">
-        
-        <!-- Daily Sub View -->
-        <div id="sub-view-daily" class="history-list">
-          <!-- Daily items dynamically rendered here -->
-        </div>
-
-        <!-- Weekly Sub View -->
-        <div id="sub-view-weekly" class="weekly-list" style="display: none;">
-          <!-- Weekly items dynamically rendered here -->
-        </div>
-
-        <!-- Monthly Sub View -->
-        <div id="sub-view-monthly" style="display: none;">
-          
-          <!-- Monthly Summary Stats Card -->
-          <div class="monthly-summary-card" style="margin-bottom: 16px;">
-            <div class="monthly-summary-top">
-              <span class="weekly-card-sub">월간 평균 수면시간</span>
-              <span class="monthly-summary-dur" id="monthly-avg-dur" style="font-size: 32px;">--시간 --분</span>
-            </div>
-            
-            <div id="monthly-cond-summary-headline" style="font-size: 13.5px; font-weight: 700; color: var(--text); margin-top: 0; text-align: left;">
-              <!-- Dynamic short conclusion: "이번 달은 🟡 보통이 가장 많아요" -->
-            </div>
-
-            <div style="font-size: 11px; color: var(--muted); font-weight: 700; text-transform: uppercase; margin-top: 0; text-align: left;">기상 후 컨디션</div>
-            <div class="monthly-mini-cards-grid" id="monthly-mini-cards-grid">
-              <div class="monthly-mini-card chip-good">
-                <span class="monthly-mini-card-label">🟢 좋음</span>
-                <span class="mini-card-count" style="color: #4ADE80;" id="monthly-cond-good">--회</span>
-              </div>
-              <div class="monthly-mini-card chip-normal">
-                <span class="monthly-mini-card-label">🟡 보통</span>
-                <span class="mini-card-count" style="color: #FDE047;" id="monthly-cond-normal">--회</span>
-              </div>
-              <div class="monthly-mini-card chip-bad">
-                <span class="monthly-mini-card-label">🔴 나쁨</span>
-                <span class="mini-card-count" style="color: #FCA5A5;" id="monthly-cond-bad">--회</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Monthly Smart Analysis Card -->
-          <div class="card" id="monthly-analysis-card" style="display: none; border-color: rgba(129, 140, 248, 0.25); background: rgba(30, 41, 59, 0.45); margin-bottom: 20px; padding: 16px;">
-            <div id="monthly-insight-headline" style="font-size: 13.5px; font-weight: 700; color: var(--text); line-height: 1.5; text-align: left;">
-              <!-- One-line insight or data lacking message -->
-            </div>
-            <!-- Toggle Accordion Link -->
-            <a class="analysis-toggle-link" id="analysis-toggle-btn" onclick="toggleAnalysisDetails()">
-              <span>[자세한 분석 보기]</span>
-            </a>
-            <!-- Accordion Details Container -->
-            <div class="analysis-details-wrapper" id="monthly-analysis-wrapper">
-              <div id="monthly-analysis-text" style="font-size: 13px; color: var(--muted); line-height: 1.6; text-align: left;">
-                <!-- Dynamic detail analysis sentences -->
-              </div>
-            </div>
-          </div>
-
-          <!-- Calendar Navigator -->
-          <div class="calendar-navigation">
-            <button class="calendar-nav-btn" onclick="changeMonth(-1)">◀</button>
-            <div class="calendar-title" id="calendar-month-title">2026년 6월</div>
-            <button class="calendar-nav-btn" onclick="changeMonth(1)">▶</button>
-          </div>
-
-          <!-- Calendar Grid -->
-          <div class="calendar-grid" id="calendar-grid-container">
-            <!-- Calendar header and cells dynamically rendered here -->
-          </div>
-
-          <!-- Calendar Date Detail Card -->
-          <div class="card" id="calendar-detail-card" style="display: none; margin-top: 20px; border-color: rgba(129, 140, 248, 0.25); background: rgba(30, 41, 59, 0.45); margin-bottom: 20px;">
-            <div class="weekly-card-title" style="margin-bottom: 12px; display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; color: var(--accent);">
-              <span>📅</span> <span id="calendar-detail-date">--.--.-- -요일</span> 상세 기록
-            </div>
-            <div id="calendar-detail-body" style="font-size: 13px; color: var(--text); line-height: 1.6; display: flex; flex-direction: column; gap: 8px; text-align: left;">
-              <!-- Dynamic details here -->
-            </div>
-          </div>
-          
-        </div>
-
-      </div>
-    </div>
+    </section>
 
   </div><!-- /view-container -->
 
-  <!-- Main Bottom Action CTA Button: app-root의 마지막 flex item으로 자연스럽게 바닥에 붙음 -->
-  <div class="bottom-button-wrapper" id="bottom-btn-wrapper">
-    <button class="cta-btn" id="cta-action-btn" onclick="handleMainAction()">
-      <span>지금 잘래요</span>
+  <!-- BOTTOM BUTTON BAR — app-root의 마지막 flex item, 항상 바닥에 붙음 -->
+  <div class="btn-bar" id="btn-bar">
+    <button class="cta-btn" id="cta-btn" onclick="handleCTA()">
+      <span id="cta-label">지금 잘래요</span>
     </button>
   </div>
 
-  </div><!-- /app-root -->
+</div><!-- /app-root -->
 
-  <!-- Start sleep confirmation modal -->
-  <div class="modal-overlay" id="start-modal">
-    <div class="modal-card">
-      <div class="modal-title">기록을 시작할까요?</div>
-      <div class="modal-desc">현재 시간이 취침시간으로 저장돼요.</div>
-      <div class="modal-time-display" id="start-modal-time">00:00</div>
-      <div class="modal-buttons">
-        <button class="modal-btn modal-btn-cancel" onclick="closeModal('start-modal')">취소</button>
-        <button class="modal-btn modal-btn-action" onclick="confirmSleepStart()">시작하기</button>
-      </div>
+
+<!-- ════════ MODALS (position:fixed, app-root 밖) ════════ -->
+
+<!-- 취침 시작 확인 -->
+<div class="modal-overlay" id="modal-start">
+  <div class="modal-box">
+    <div class="modal-title">기록을 시작할까요?</div>
+    <div class="modal-desc">현재 시간이 취침시간으로 저장돼요.</div>
+    <div class="modal-time" id="modal-start-time">00:00</div>
+    <div class="modal-btns">
+      <button class="m-btn m-btn-cancel" onclick="closeModal('modal-start')">취소</button>
+      <button class="m-btn m-btn-ok"     onclick="doSleepStart()">시작하기</button>
     </div>
   </div>
+</div>
 
-  <!-- Complete sleep confirmation modal -->
-  <div class="modal-overlay" id="complete-modal">
-    <div class="modal-card">
-      <div class="modal-title">기록을 완료할까요?</div>
-      <div class="modal-desc">현재 시간이 기상시간으로 저장돼요.</div>
-      <div class="modal-time-display" id="complete-modal-time">00:00</div>
-      <div class="modal-meta-row" id="complete-modal-dur">예상 수면시간: --시간 --분</div>
-      <div class="modal-buttons">
-        <button class="modal-btn modal-btn-cancel" onclick="closeModal('complete-modal')">취소</button>
-        <button class="modal-btn modal-btn-action" onclick="confirmSleepComplete()">완료하기</button>
-      </div>
+<!-- 기상 완료 확인 -->
+<div class="modal-overlay" id="modal-end">
+  <div class="modal-box">
+    <div class="modal-title">기록을 완료할까요?</div>
+    <div class="modal-desc">현재 시간이 기상시간으로 저장돼요.</div>
+    <div class="modal-time" id="modal-end-time">00:00</div>
+    <div class="modal-dur"  id="modal-end-dur">예상 수면시간: --시간 --분</div>
+    <div class="modal-btns">
+      <button class="m-btn m-btn-cancel" onclick="closeModal('modal-end')">취소</button>
+      <button class="m-btn m-btn-ok"     onclick="doSleepEnd()">완료하기</button>
     </div>
   </div>
+</div>
 
-  <!-- Completed Success Toast Card -->
-  <div class="toast-overlay" id="success-toast">
-    <div class="toast-card" style="max-width: 320px;">
-      <div class="toast-icon">✅</div>
-      <div class="toast-title">기록 완료</div>
-      <div class="toast-desc" id="success-toast-desc">수면시간 --시간 --분이 저장됐어요.</div>
-      <div class="modal-buttons" style="margin-top: 14px;">
-        <button class="modal-btn modal-btn-action" style="width: 100%;" onclick="closeModal('success-toast')">닫기</button>
-      </div>
-      <div style="margin-top: 16px; text-align: center;">
-        <a href="javascript:void(0)" onclick="closeToastAndShowTab('monthly')" style="font-size: 13.5px; color: var(--accent); font-weight: 700; text-decoration: none; display: inline-block; padding: 4px 8px; transition: color 0.2s ease;">수면 패턴 분석 ➔</a>
-      </div>
+<!-- 짧은 수면 경고 -->
+<div class="modal-overlay" id="modal-warn">
+  <div class="modal-box">
+    <div class="modal-title" style="color:var(--bad)">수면시간이 너무 짧아요</div>
+    <div class="modal-desc">그래도 저장할까요?</div>
+    <div class="modal-time" id="modal-warn-time">00:00</div>
+    <div class="modal-btns">
+      <button class="m-btn m-btn-cancel" onclick="cancelShort()">취소</button>
+      <button class="m-btn m-btn-danger" onclick="saveShort()">저장하기</button>
     </div>
   </div>
+</div>
 
-  <!-- Warning modal for short sleep duration -->
-  <div class="modal-overlay" id="warning-modal">
-    <div class="modal-card">
-      <div class="modal-title" style="color: var(--bad);">수면시간이 너무 짧아요</div>
-      <div class="modal-desc">수면시간이 너무 짧아요. 그래도 저장할까요?</div>
-      <div class="modal-time-display" id="warning-modal-time">00:00</div>
-      <div class="modal-buttons">
-        <button class="modal-btn modal-btn-cancel" onclick="cancelShortSleepRecord()">취소</button>
-        <button class="modal-btn modal-btn-action" style="background: var(--bad); box-shadow: 0 4px 15px rgba(239, 68, 68, 0.25);" onclick="saveShortSleepRecord()">저장하기</button>
-      </div>
+<!-- 초기화 확인 -->
+<div class="modal-overlay" id="modal-reset">
+  <div class="modal-box">
+    <div class="modal-title" style="color:var(--bad)">기록을 초기화할까요?</div>
+    <div class="modal-desc">취침 중 상태와 기록이 삭제됩니다.</div>
+    <div class="modal-icon">♻️</div>
+    <div class="modal-btns">
+      <button class="m-btn m-btn-cancel" onclick="closeModal('modal-reset')">취소</button>
+      <button class="m-btn m-btn-danger" onclick="doReset()">초기화하기</button>
     </div>
   </div>
+</div>
 
-  <!-- Reset confirmation modal -->
-  <div class="modal-overlay" id="reset-confirm-modal">
-    <div class="modal-card">
-      <div class="modal-title" style="color: var(--bad);" id="reset-modal-title">기록을 초기화할까요?</div>
-      <div class="modal-desc" id="reset-modal-desc">기록을 삭제하고 측정 상태를 초기화하시겠습니까?</div>
-      <div style="font-size: 40px; margin-bottom: 20px;">♻️</div>
-      <div class="modal-buttons">
-        <button class="modal-btn modal-btn-cancel" onclick="closeModal('reset-confirm-modal')">취소</button>
-        <button class="modal-btn modal-btn-action" style="background: var(--bad); box-shadow: 0 4px 15px rgba(239, 68, 68, 0.25);" onclick="executeResetRecord()">초기화하기</button>
-      </div>
-    </div>
+<!-- 완료 토스트 -->
+<div class="toast-overlay" id="toast-done">
+  <div class="toast-box">
+    <div class="toast-icon">✅</div>
+    <div class="toast-title">기록 완료</div>
+    <div class="toast-desc" id="toast-desc">수면시간이 저장됐어요.</div>
+    <button class="toast-btn" onclick="closeToast()">닫기</button>
+    <a class="toast-link" onclick="closeToast(); switchView('history'); switchSubTab('monthly')">수면 패턴 분석 →</a>
   </div>
+</div>
 
-  <script>
-    // ── State & LocalStorage Keys ──
-    const STATE_KEY = 'sleep_state_v2';
-    const HIST_KEY  = 'sleep_history_v2';
 
-    // Core States
-    let state = JSON.parse(localStorage.getItem(STATE_KEY) || 'null') || { 
-      sleeping: false, 
-      sleepTime: null, 
-      wakeTime: null,
-      sleepCondition: 'normal',
-      wakeCondition: 'normal'
+<!-- ════════ SCRIPTS ════════ -->
+<script>
+  /* ──────────────────────────────────────────────
+     STATE & STORAGE
+  ────────────────────────────────────────────── */
+  const SK = 'sleep_state_v2';
+  const HK = 'sleep_history_v2';
+  let state   = JSON.parse(localStorage.getItem(SK) || 'null') || { sleeping: false, sleepTime: null, wakeTime: null, sleepCond: 'normal', wakeCond: 'normal' };
+  let history = JSON.parse(localStorage.getItem(HK) || '[]');
+
+  const saveState   = () => localStorage.setItem(SK, JSON.stringify(state));
+  const saveHistory = () => localStorage.setItem(HK, JSON.stringify(history));
+
+  const DAYS = ['일','월','화','수','목','금','토'];
+
+  /* ──────────────────────────────────────────────
+     HELPERS
+  ────────────────────────────────────────────── */
+  function hm(d) {
+    const dt = new Date(d);
+    return `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+  }
+  function dateStr(d) {
+    const dt = new Date(d);
+    return `${dt.getFullYear()}.${String(dt.getMonth()+1).padStart(2,'0')}.${String(dt.getDate()).padStart(2,'0')}`;
+  }
+  function dateDayStr(d) {
+    const dt = new Date(d);
+    return `${dateStr(d)} (${DAYS[dt.getDay()]})`;
+  }
+  function durStr(secs) {
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    return h > 0 ? `${h}시간 ${m}분` : `${m}분`;
+  }
+  function durClass(secs) {
+    const h = secs / 3600;
+    return h >= 7 ? 'good' : h >= 5 ? 'normal' : 'bad';
+  }
+  function condIcon(c) {
+    return c === 'good' ? '🟢 좋음' : c === 'bad' ? '🔴 나쁨' : '🟡 보통';
+  }
+
+  /* ──────────────────────────────────────────────
+     CLOCK
+  ────────────────────────────────────────────── */
+  let clockTick = null;
+
+  function startClock() {
+    if (clockTick) clearInterval(clockTick);
+    tick();
+    clockTick = setInterval(tick, 1000);
+  }
+
+  function tick() {
+    const now = new Date();
+    const liveDate = document.getElementById('live-date');
+    const liveTime = document.getElementById('live-time');
+    if (liveDate) liveDate.textContent = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')} ${DAYS[now.getDay()]}요일`;
+    if (liveTime) liveTime.textContent = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+
+    // 모달 시간 실시간 업데이트
+    const ms = document.getElementById('modal-start');
+    const me = document.getElementById('modal-end');
+    if (ms && ms.classList.contains('show')) document.getElementById('modal-start-time').textContent = hm(now);
+    if (me && me.classList.contains('show')) {
+      document.getElementById('modal-end-time').textContent = hm(now);
+      if (state.sleepTime) {
+        const secs = (now - new Date(state.sleepTime)) / 1000;
+        document.getElementById('modal-end-dur').textContent = `예상 수면시간: ${durStr(Math.max(0,secs))}`;
+      }
+    }
+
+    // 취침 중 상태 설명
+    if (state.sleeping && state.sleepTime) {
+      const secs = Math.max(0, (now - new Date(state.sleepTime)) / 1000);
+      document.getElementById('status-desc').textContent = `${durStr(secs)}째 자는 중이에요`;
+    }
+  }
+
+  /* ──────────────────────────────────────────────
+     VIEW NAVIGATION
+  ────────────────────────────────────────────── */
+  let currentView = 'home';
+  let currentSub  = 'daily';
+
+  function toggleView() {
+    switchView(currentView === 'home' ? 'history' : 'home');
+  }
+
+  function switchView(v) {
+    currentView = v;
+    const isHome = v === 'home';
+
+    document.getElementById('hdr-title').textContent = isHome ? '수면 기록' : '수면 상세 내역';
+    document.getElementById('toggle-btn').textContent = isHome ? '히스토리' : '수면 기록';
+    document.getElementById('view-home').classList.toggle('active', isHome);
+    document.getElementById('view-history').classList.toggle('active', !isHome);
+    document.getElementById('btn-bar').style.display = isHome ? '' : 'none';
+
+    if (!isHome) renderHistory();
+    else syncHome();
+  }
+
+  function switchSubTab(sub) {
+    currentSub = sub;
+    ['daily','weekly','monthly'].forEach(s => {
+      document.getElementById('tab-' + s).classList.toggle('on', s === sub);
+      document.getElementById('sub-' + s).style.display = s === sub ? (s === 'daily' ? 'flex' : s === 'weekly' ? 'flex' : 'block') : 'none';
+    });
+    renderHistory();
+  }
+
+  /* ──────────────────────────────────────────────
+     HOME UI SYNC
+  ────────────────────────────────────────────── */
+  function syncHome() {
+    const sleeping = state.sleeping;
+    const now = new Date();
+    const todayKey = `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
+
+    // 상태 뱃지
+    document.getElementById('status-icon').textContent = sleeping ? '🌙' : '🌤';
+    document.getElementById('status-text').textContent = sleeping ? '취침 중' : '생활 중';
+    if (!sleeping) document.getElementById('status-desc').textContent = '아직 수면 기록을 시작하지 않았어요';
+
+    // CTA 버튼
+    const ctaBtn   = document.getElementById('cta-btn');
+    const ctaLabel = document.getElementById('cta-label');
+    ctaBtn.className = sleeping ? 'cta-btn wake' : 'cta-btn';
+    ctaLabel.textContent = sleeping ? '일어났어요' : '지금 잘래요';
+
+    // 컨디션 영역
+    document.getElementById('sleep-cond-area').style.display = sleeping ? 'none' : '';
+    document.getElementById('wake-cond-area').style.display  = sleeping ? '' : 'none';
+
+    // 컨디션 칩 상태 반영
+    renderCondChips('sleep', state.sleepCond);
+    renderCondChips('wake', state.wakeCond);
+
+    // 오늘의 기록
+    const resetBtn = document.getElementById('today-reset-btn');
+
+    if (sleeping && state.sleepTime) {
+      // 취침 중
+      document.getElementById('today-sleep-date').textContent = dateStr(state.sleepTime);
+      document.getElementById('today-sleep').textContent      = hm(state.sleepTime);
+      document.getElementById('today-wake-date').textContent  = '기상 대기 중';
+      document.getElementById('today-wake').textContent       = '--:--';
+      document.getElementById('today-extra').style.display    = 'none';
+      document.getElementById('today-empty').style.display    = 'none';
+      resetBtn.style.display = 'flex';
+    } else {
+      // 오늘 완료된 기록 찾기 (오후 6시 이전이면 오늘 기록 표시)
+      const todayRecord = history.find(r => {
+        const wd = new Date(r.wakeTime);
+        return wd.getFullYear() === now.getFullYear() && wd.getMonth() === now.getMonth() && wd.getDate() === now.getDate();
+      });
+
+      if (todayRecord && now.getHours() < 18) {
+        document.getElementById('today-sleep-date').textContent = dateStr(todayRecord.sleepTime);
+        document.getElementById('today-sleep').textContent      = hm(todayRecord.sleepTime);
+        document.getElementById('today-wake-date').textContent  = dateStr(todayRecord.wakeTime);
+        document.getElementById('today-wake').textContent       = hm(todayRecord.wakeTime);
+        const ex = document.getElementById('today-extra');
+        ex.style.display = 'flex';
+        document.getElementById('today-dur').textContent  = `⏳ 수면시간: ${durStr(todayRecord.duration)}`;
+        document.getElementById('today-cond').textContent = `💤 컨디션: 취침 전 ${condIcon(todayRecord.sleepCond)} → 기상 후 ${condIcon(todayRecord.wakeCond)}`;
+        document.getElementById('today-empty').style.display = 'none';
+        resetBtn.style.display = 'none';
+      } else {
+        document.getElementById('today-sleep-date').textContent = '--.--.--';
+        document.getElementById('today-sleep').textContent      = '--:--';
+        document.getElementById('today-wake-date').textContent  = '--.--.--';
+        document.getElementById('today-wake').textContent       = '--:--';
+        document.getElementById('today-extra').style.display    = 'none';
+        document.getElementById('today-empty').style.display    = '';
+        resetBtn.style.display = 'none';
+      }
+    }
+
+    // 최근 기록 카드
+    const recentRecord = (() => {
+      if (history.length === 0) return null;
+      if (!sleeping) {
+        const todayRec = history.find(r => {
+          const wd = new Date(r.wakeTime);
+          return wd.getFullYear() === now.getFullYear() && wd.getMonth() === now.getMonth() && wd.getDate() === now.getDate();
+        });
+        if (todayRec && now.getHours() < 18) return history.find(r => r !== todayRec) || null;
+        return history[0];
+      }
+      return history[0];
+    })();
+
+    const recentCard = document.getElementById('recent-card');
+    if (recentRecord) {
+      recentCard.style.display = '';
+      document.getElementById('recent-sleep-date').textContent = dateStr(recentRecord.sleepTime);
+      document.getElementById('recent-sleep').textContent      = hm(recentRecord.sleepTime);
+      document.getElementById('recent-wake-date').textContent  = dateStr(recentRecord.wakeTime);
+      document.getElementById('recent-wake').textContent       = hm(recentRecord.wakeTime);
+      document.getElementById('recent-extra').innerHTML = `<span>⏳ ${durStr(recentRecord.duration)}</span><span>💤 기상 후 ${condIcon(recentRecord.wakeCond)}</span>`;
+    } else {
+      recentCard.style.display = 'none';
+    }
+  }
+
+  function renderCondChips(type, val) {
+    const area = document.getElementById(type === 'sleep' ? 'sleep-cond-area' : 'wake-cond-area');
+    area.querySelectorAll('.cond-chip').forEach(btn => {
+      btn.classList.toggle('on', btn.dataset.v === val);
+    });
+  }
+
+  function setCondition(type, val) {
+    if (type === 'sleep') state.sleepCond = val;
+    else state.wakeCond = val;
+    saveState();
+    renderCondChips(type, val);
+  }
+
+  /* ──────────────────────────────────────────────
+     CTA ACTIONS
+  ────────────────────────────────────────────── */
+  function handleCTA() {
+    if (state.sleeping) openModal('modal-end');
+    else openModal('modal-start');
+  }
+
+  function doSleepStart() {
+    state.sleeping  = true;
+    state.sleepTime = new Date().toISOString();
+    state.wakeTime  = null;
+    saveState();
+    closeModal('modal-start');
+    syncHome();
+  }
+
+  function doSleepEnd() {
+    const now   = new Date();
+    const start = new Date(state.sleepTime);
+    const secs  = (now - start) / 1000;
+
+    if (secs < 3600) { // 1시간 미만 경고
+      document.getElementById('modal-warn-time').textContent = hm(now);
+      closeModal('modal-end');
+      openModal('modal-warn');
+      return;
+    }
+    _saveSleepRecord(now, secs);
+  }
+
+  let _shortSaveTime = null;
+  function cancelShort() { closeModal('modal-warn'); }
+  function saveShort() {
+    const now  = new Date();
+    const secs = (now - new Date(state.sleepTime)) / 1000;
+    _saveSleepRecord(now, secs);
+  }
+
+  function _saveSleepRecord(wakeTime, secs) {
+    const rec = {
+      sleepTime: state.sleepTime,
+      wakeTime:  wakeTime.toISOString(),
+      duration:  secs,
+      sleepCond: state.sleepCond,
+      wakeCond:  state.wakeCond,
     };
-    
-    let history = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
-    let resetMode = '';
-    
-    // UI Navigation States
-    let currentMainTab = 'home';
-    let currentSubTab = 'daily';
-    
-    // Calendar Month Navigator
-    let calYear = new Date().getFullYear();
-    let calMonth = new Date().getMonth(); // 0-11
-    let selectedCalendarCell = null;
-
-    function saveState() { 
-      localStorage.setItem(STATE_KEY, JSON.stringify(state)); 
-    }
-    
-    function saveHistory() { 
-      localStorage.setItem(HIST_KEY, JSON.stringify(history)); 
-    }
-
-    // ── Realtime Timer & Clock ──
-    const days = ['일','월','화','수','목','금','토'];
-    let realtimeTimerInterval = null;
-
-    function updateClock() {
-      const now = new Date();
-      
-      // Update Live Date & Time Display
-      const liveDateEl = document.getElementById('live-date');
-      const liveTimeEl = document.getElementById('live-time');
-      if (liveDateEl) {
-        liveDateEl.textContent = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')} ${days[now.getDay()]}요일`;
-      }
-      if (liveTimeEl) {
-        const h = String(now.getHours()).padStart(2, '0');
-        const m = String(now.getMinutes()).padStart(2, '0');
-        const s = String(now.getSeconds()).padStart(2, '0');
-        liveTimeEl.textContent = `${h}:${m}:${s}`;
-      }
-
-      // Update Start sleep modal time if active
-      if (document.getElementById('start-modal').classList.contains('active')) {
-        document.getElementById('start-modal-time').textContent = formatHoursMinutes(now);
-      }
-      
-      // Update Complete sleep modal time if active
-      if (document.getElementById('complete-modal').classList.contains('active')) {
-        document.getElementById('complete-modal-time').textContent = formatHoursMinutes(now);
-        if (state.sleepTime) {
-          const expectedDur = Math.max(0, (now - new Date(state.sleepTime)) / 1000);
-          document.getElementById('complete-modal-dur').textContent = `예상 수면시간: ${formatDurationKorean(expectedDur)}`;
-        }
-      }
-
-      // Update Header/Description realtime info
-      if (state.sleeping && state.sleepTime) {
-        const elapsedSeconds = Math.max(0, (now - new Date(state.sleepTime)) / 1000);
-        const hours = Math.floor(elapsedSeconds / 3600);
-        const minutes = Math.floor((elapsedSeconds % 3600) / 60);
-        document.getElementById('status-desc').textContent = `${hours}시간 ${minutes}분째 자는 중이에요`;
-
-        // 실시간 수면시간을 [오늘의 기록] 상세 카드에 반영
-        const todayDetailsDurEl = document.getElementById('today-details-duration');
-        if (todayDetailsDurEl) {
-          todayDetailsDurEl.innerHTML = `⏳ <strong>수면시간:</strong> ${hours}시간 ${minutes}분`;
-        }
-      } else {
-        document.getElementById('status-desc').textContent = '아직 수면 기록을 시작하지 않았어요';
-      }
-    }
-
-    function startRealtimeTimer() {
-      if (realtimeTimerInterval) clearInterval(realtimeTimerInterval);
-      updateClock();
-      realtimeTimerInterval = setInterval(updateClock, 1000);
-    }
-    
-    function stopRealtimeTimer() {
-      if (realtimeTimerInterval) {
-        clearInterval(realtimeTimerInterval);
-        realtimeTimerInterval = null;
-      }
-    }
-
-    // ── Helper Formatter ──
-    function formatHoursMinutes(dateOrIso) {
-      const d = new Date(dateOrIso);
-      const h = String(d.getHours()).padStart(2, '0');
-      const m = String(d.getMinutes()).padStart(2, '0');
-      return `${h}:${m}`;
-    }
-
-    function formatDateAndDay(dateOrIso) {
-      const d = new Date(dateOrIso);
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const dayNum = String(d.getDate()).padStart(2, '0');
-      const dayName = days[d.getDay()];
-      return `${year}.${month}.${dayNum} (${dayName})`;
-    }
-
-    function formatFullDateTime(dateOrIso) {
-      const d = new Date(dateOrIso);
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const dayNum = String(d.getDate()).padStart(2, '0');
-      const dayName = days[d.getDay()];
-      const hm = formatHoursMinutes(d);
-      return `${year}.${month}.${dayNum} (${dayName}) ${hm}`;
-    }
-
-    function formatDurationKorean(secs) {
-      const h = Math.floor(secs / 3600);
-      const m = Math.floor((secs % 3600) / 60);
-      if (h > 0) {
-        return `${h}시간 ${m}분`;
-      }
-      return `${m}분`;
-    }
-
-    function getWeekOfMonth(dateStr) {
-      const d = new Date(dateStr);
-      const date = d.getDate();
-      const firstDay = new Date(d.getFullYear(), d.getMonth(), 1).getDay(); // 0:일, 1:월 ...
-      return Math.ceil((date + firstDay) / 7);
-    }
-
-    // ── Tab Switching ──
-    function toggleMainView() {
-      if (currentMainTab === 'home') {
-        switchMainTab('history');
-      } else {
-        switchMainTab('home');
-      }
-    }
-
-    function switchMainTab(tab) {
-      currentMainTab = tab;
-      
-      // Update header title and toggle button text
-      const headerTitle = document.getElementById('app-header-title');
-      if (headerTitle) {
-        headerTitle.textContent = tab === 'home' ? '수면 기록' : '수면 상세 내역';
-      }
-
-      const toggleBtn = document.getElementById('view-toggle-btn');
-      if (toggleBtn) {
-        toggleBtn.textContent = tab === 'home' ? '히스토리' : '수면 기록';
-      }
-
-      // Show/Hide views
-      document.getElementById('view-home').classList.toggle('active', tab === 'home');
-      document.getElementById('view-history').classList.toggle('active', tab === 'history');
-
-      // bottom-button-wrapper는 body flex child → display none/block으로 완전히 숨김/표시
-      const btnWrapper = document.getElementById('bottom-btn-wrapper');
-      if (btnWrapper) {
-        if (tab === 'home') {
-          btnWrapper.style.display = 'block';
-          btnWrapper.style.height = '';
-          btnWrapper.style.overflow = '';
-          btnWrapper.style.padding = '';
-        } else {
-          btnWrapper.style.display = 'none';
-        }
-      }
-
-      if (tab === 'history') {
-        renderHistoryTabs();
-      } else {
-        syncHomeUI();
-      }
-    }
-
-    function switchSubTab(subTab) {
-      currentSubTab = subTab;
-
-      // Update sub tab buttons styling
-      document.getElementById('sub-tab-daily').classList.toggle('active', subTab === 'daily');
-      document.getElementById('sub-tab-weekly').classList.toggle('active', subTab === 'weekly');
-      document.getElementById('sub-tab-monthly').classList.toggle('active', subTab === 'monthly');
-
-      // Show/Hide target sub container
-      document.getElementById('sub-view-daily').style.display = subTab === 'daily' ? 'flex' : 'none';
-      document.getElementById('sub-view-weekly').style.display = subTab === 'weekly' ? 'flex' : 'none';
-      document.getElementById('sub-view-monthly').style.display = subTab === 'monthly' ? 'block' : 'none';
-
-      renderHistoryTabs();
-    }
-
-    function renderHistoryTabs() {
-      if (currentSubTab === 'daily') {
-        renderDailyList();
-      } else if (currentSubTab === 'weekly') {
-        renderWeeklyStats();
-      } else if (currentSubTab === 'monthly') {
-        renderMonthlyCalendar();
-      }
-    }
-
-    // ── Home View Logic ──
-    function renderRecentRecordCard(record) {
-      const recentRecordCard = document.getElementById('recent-record-card');
-      if (!record) {
-        recentRecordCard.style.display = 'none';
-        return;
-      }
-      
-      const conditionIcons = { 
-        good: '<span style="color:#4ADE80">🟢 좋음</span>', 
-        normal: '<span style="color:#FDE047">🟡 보통</span>', 
-        bad: '<span style="color:#FCA5A5">🔴 나쁨</span>' 
-      };
-
-      document.getElementById('recent-sleep-date').textContent = formatDateAndDay(record.sleepTime);
-      document.getElementById('recent-sleep').textContent = formatHoursMinutes(record.sleepTime);
-      document.getElementById('recent-wake-date').textContent = formatDateAndDay(record.wakeTime);
-      document.getElementById('recent-wake').textContent = formatHoursMinutes(record.wakeTime);
-      
-      let detailsHtml = `
-        <span>⏳ <strong>수면시간:</strong> ${formatDurationKorean(record.duration)}</span>
-        <span>💤 <strong>기상 후 컨디션:</strong> ${conditionIcons[record.wakeCondition || 'normal']}</span>
-      `;
-      document.getElementById('recent-details').innerHTML = detailsHtml;
-      recentRecordCard.style.display = 'block';
-    }
-
-    function syncHomeUI() {
-      const statusIcon = document.getElementById('status-icon');
-      const statusText = document.getElementById('status-text');
-      const statusBadge = document.getElementById('status-badge');
-      const ctaBtn = document.getElementById('cta-action-btn');
-      
-      const sleepConditionArea = document.getElementById('sleep-condition-area');
-      const wakeConditionArea = document.getElementById('wake-condition-area');
-
-      // Sync active chips in DOM based on states
-      syncChipHighlight('sleep', state.sleepCondition || 'normal');
-      syncChipHighlight('wake', state.wakeCondition || 'normal');
-
-      const conditionIcons = { 
-        good: '<span style="color:#4ADE80">🟢 좋음</span>', 
-        normal: '<span style="color:#FDE047">🟡 보통</span>', 
-        bad: '<span style="color:#FCA5A5">🔴 나쁨</span>' 
-      };
-
-      const resetBtn = document.getElementById('today-reset-btn');
-
-      if (state.sleeping) {
-        // Sleep Mode UI
-        statusIcon.textContent = '🌙';
-        statusText.textContent = '수면 중';
-        statusBadge.style.borderColor = 'var(--accent)';
-        
-        document.getElementById('today-time-grid').style.display = 'flex';
-        document.getElementById('today-empty-msg').style.display = 'none';
-        
-        document.getElementById('today-sleep-date').textContent = formatDateAndDay(state.sleepTime);
-        document.getElementById('today-sleep').textContent = formatHoursMinutes(state.sleepTime);
-        document.getElementById('today-wake-date').textContent = '--.--.-- (-요일)';
-        document.getElementById('today-wake').textContent = '--:--';
-        
-        sleepConditionArea.style.display = 'none';
-        wakeConditionArea.style.display = 'block';
-        
-        ctaBtn.innerHTML = `<span>일어났어요</span>`;
-        ctaBtn.classList.add('wake-mode');
-        renderRecentRecordCard(null);
-
-        // 수면 중일 때 상세 영역 노출
-        const todayDetailsEl = document.getElementById('today-details');
-        const todayDetailsDurEl = document.getElementById('today-details-duration');
-        const todayDetailsCondEl = document.getElementById('today-details-conditions');
-        
-        if (todayDetailsEl) todayDetailsEl.style.display = 'flex';
-
-        // 실시간 수면시간 초기값 매핑
-        const now = new Date();
-        const elapsedSeconds = Math.max(0, (now - new Date(state.sleepTime)) / 1000);
-        const hours = Math.floor(elapsedSeconds / 3600);
-        const minutes = Math.floor((elapsedSeconds % 3600) / 60);
-        if (todayDetailsDurEl) {
-          todayDetailsDurEl.innerHTML = `⏳ <strong>수면시간:</strong> ${hours}시간 ${minutes}분`;
-        }
-
-        // 취침 전 컨디션만 노출
-        if (todayDetailsCondEl) {
-          todayDetailsCondEl.innerHTML = `💤 <strong>컨디션 변화:</strong> 취침 전 ${conditionIcons[state.sleepCondition || 'normal']}`;
-        }
-
-        // 수면 중일 때는 초기화 버튼 노출
-        if (resetBtn) resetBtn.style.display = 'flex';
-      } else {
-        // Awake Mode UI
-        statusIcon.textContent = '🌤';
-        statusText.textContent = '생활 중';
-        statusBadge.style.borderColor = 'var(--border)';
-        
-        sleepConditionArea.style.display = 'block';
-        wakeConditionArea.style.display = 'none';
-        
-        ctaBtn.innerHTML = `<span>지금 잘래요</span>`;
-        ctaBtn.classList.remove('wake-mode');
-        document.getElementById('status-desc').textContent = '아직 수면 기록을 시작하지 않았어요';
-
-        // 18:00 (오후 6시) 리셋 규칙 처리
-        const now = new Date();
-        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-        const currentHour = now.getHours();
-
-        // 오늘 날짜의 완료된 기록이 있는지 확인
-        const todayRecord = history.find(rec => rec.date === todayStr);
-
-        if (todayRecord && currentHour < 18) {
-          // 18:00 이전이며 오늘 완료된 기록이 있는 경우 -> 오늘의 기록 카드에 노출
-          document.getElementById('today-time-grid').style.display = 'flex';
-          document.getElementById('today-empty-msg').style.display = 'none';
-          
-          document.getElementById('today-sleep-date').textContent = formatDateAndDay(todayRecord.sleepTime);
-          document.getElementById('today-sleep').textContent = formatHoursMinutes(todayRecord.sleepTime);
-          document.getElementById('today-wake-date').textContent = formatDateAndDay(todayRecord.wakeTime);
-          document.getElementById('today-wake').textContent = formatHoursMinutes(todayRecord.wakeTime);
-
-          // 오늘의 기록에 최종 수면시간 및 컨디션 표시
-          const todayDetailsEl = document.getElementById('today-details');
-          const todayDetailsDurEl = document.getElementById('today-details-duration');
-          const todayDetailsCondEl = document.getElementById('today-details-conditions');
-          
-          if (todayDetailsEl) todayDetailsEl.style.display = 'flex';
-          if (todayDetailsDurEl) {
-            todayDetailsDurEl.innerHTML = `⏳ <strong>수면시간:</strong> ${formatDurationKorean(todayRecord.duration)}`;
-          }
-          if (todayDetailsCondEl) {
-            todayDetailsCondEl.innerHTML = `💤 <strong>컨디션 변화:</strong> 취침 전 ${conditionIcons[todayRecord.sleepCondition || 'normal']} → 기상 후 ${conditionIcons[todayRecord.wakeCondition || 'normal']}`;
-          }
-
-          // 완료된 기록이 있으므로 초기화 버튼 노출
-          if (resetBtn) resetBtn.style.display = 'flex';
-
-          // 최근 수면 기록 카드에는 오늘 이전 완료 기록(history[1] 또는 오늘 날짜가 아닌 것 중 첫 번째)을 노출
-          const pastRecord = history.filter(rec => rec.date !== todayStr)[0];
-          renderRecentRecordCard(pastRecord);
-        } else {
-          // 18:00 이후이거나 오늘 완료된 기록이 없는 경우 -> 오늘의 기록 카드는 비어있음
-          document.getElementById('today-time-grid').style.display = 'none';
-          document.getElementById('today-empty-msg').style.display = 'block';
-
-          // 오늘 기록 상세 영역 감춤
-          const todayDetailsEl = document.getElementById('today-details');
-          if (todayDetailsEl) todayDetailsEl.style.display = 'none';
-
-          // 초기화할 기록이 없으므로 초기화 버튼 숨김
-          if (resetBtn) resetBtn.style.display = 'none';
-
-          // 최근 수면 기록 카드에는 전체 기록 중 가장 최신 것(history[0])을 노출
-          renderRecentRecordCard(history[0]);
-        }
-      }
-    }
-
-    function resetTodayRecord() {
-      if (state.sleeping) {
-        resetMode = 'sleeping';
-        document.getElementById('reset-modal-desc').innerHTML = '현재 측정 중인 수면 기록이 초기화됩니다.<br>(수면 측정 상태가 해제됩니다.)';
-        openModal('reset-confirm-modal');
-      } else {
-        const now = new Date();
-        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-        const todayIdx = history.findIndex(rec => rec.date === todayStr);
-        if (todayIdx !== -1) {
-          resetMode = 'completed';
-          document.getElementById('reset-modal-desc').innerHTML = '오늘 완료된 수면 기록을 삭제하고 초기화하시겠습니까?<br>(기록 및 분석 데이터가 삭제됩니다.)';
-          openModal('reset-confirm-modal');
-        }
-      }
-    }
-
-    function executeResetRecord() {
-      closeModal('reset-confirm-modal');
-      if (resetMode === 'sleeping') {
-        state.sleeping = false;
-        state.sleepTime = null;
-        state.sleepCondition = 'normal';
-        state.wakeCondition = 'normal';
-        state.pendingWakeTime = null;
-        saveState();
-        syncHomeUI();
-      } else if (resetMode === 'completed') {
-        const now = new Date();
-        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-        const todayIdx = history.findIndex(rec => rec.date === todayStr);
-        if (todayIdx !== -1) {
-          history.splice(todayIdx, 1);
-          saveHistory();
-          syncHomeUI();
-          renderHistoryTabs(); // 히스토리 리스트도 동시 업데이트
-        }
-      }
-      resetMode = '';
-    }
-
-    function selectCondition(type, cond) {
-      if (type === 'sleep') {
-        state.sleepCondition = cond;
-      } else {
-        state.wakeCondition = cond;
-      }
-      saveState();
-      syncChipHighlight(type, cond);
-    }
-
-    function syncChipHighlight(type, cond) {
-      const containerId = type === 'sleep' ? 'sleep-condition-chips' : 'wake-condition-chips';
-      const buttons = document.querySelectorAll(`#${containerId} .condition-chip`);
-      buttons.forEach(btn => {
-        btn.classList.toggle('active', btn.getAttribute('data-cond') === cond);
-      });
-    }
-
-    // ── Main Bottom Buttons & Modals Control ──
-    function handleMainAction() {
-      const now = new Date();
-      if (!state.sleeping) {
-        // Open sleep confirm modal
-        document.getElementById('start-modal-time').textContent = formatHoursMinutes(now);
-        openModal('start-modal');
-      } else {
-        // Open wake confirm modal
-        document.getElementById('complete-modal-time').textContent = formatHoursMinutes(now);
-        const expectedDur = Math.max(0, (now - new Date(state.sleepTime)) / 1000);
-        document.getElementById('complete-modal-dur').textContent = `예상 수면시간: ${formatDurationKorean(expectedDur)}`;
-        openModal('complete-modal');
-      }
-    }
-
-    function openModal(id) {
-      const overlay = document.getElementById(id);
-      overlay.classList.add('active');
-    }
-
-    function closeModal(id) {
-      const overlay = document.getElementById(id);
-      overlay.classList.remove('active');
-    }
-
-    function confirmSleepStart() {
-      closeModal('start-modal');
-      
-      const now = new Date().toISOString();
-      state.sleeping = true;
-      state.sleepTime = now;
-      state.wakeTime = null;
-      
-      saveState();
-      syncHomeUI();
-    }
-
-    function confirmSleepComplete() {
-      closeModal('complete-modal');
-      
-      const nowIso = new Date().toISOString();
-      const durSeconds = Math.max(0, (new Date(nowIso) - new Date(state.sleepTime)) / 1000);
-      
-      // 10분(600초) 미만 수면이면 즉시 저장하지 않고 경고 모달 노출 (P0 해결)
-      if (durSeconds < 600) {
-        state.pendingWakeTime = nowIso;
-        saveState();
-        document.getElementById('warning-modal-time').textContent = formatDurationKorean(durSeconds);
-        openModal('warning-modal');
-      } else {
-        saveSleepRecord(nowIso, durSeconds);
-      }
-    }
-
-    function saveShortSleepRecord() {
-      closeModal('warning-modal');
-      if (state.pendingWakeTime && state.sleepTime) {
-        const nowIso = state.pendingWakeTime;
-        const durSeconds = Math.max(0, (new Date(nowIso) - new Date(state.sleepTime)) / 1000);
-        saveSleepRecord(nowIso, durSeconds);
-      }
-    }
-
-    function cancelShortSleepRecord() {
-      closeModal('warning-modal');
-      state.pendingWakeTime = null;
-      saveState();
-    }
-
-    function saveSleepRecord(wakeTimeIso, durSeconds) {
-      state.wakeTime = wakeTimeIso;
-      state.sleeping = false;
-
-      const wakeDate = new Date(state.wakeTime);
-      const recordDate = `${wakeDate.getFullYear()}-${String(wakeDate.getMonth() + 1).padStart(2, '0')}-${String(wakeDate.getDate()).padStart(2, '0')}`;
-
-      const newRecord = {
-        date: recordDate,
-        sleepTime: state.sleepTime,
-        wakeTime: state.wakeTime,
-        duration: durSeconds,
-        sleepCondition: state.sleepCondition || 'normal',
-        wakeCondition: state.wakeCondition || 'normal'
-      };
-      
-      history.unshift(newRecord);
-      saveHistory();
-
-      // Reset active states for next sleeps
-      state.sleepTime = null;
-      state.wakeTime = null;
-      state.sleepCondition = 'normal';
-      state.wakeCondition = 'normal';
-      state.pendingWakeTime = null;
-      saveState();
-
-      // Trigger Completed Toast
-      document.getElementById('success-toast-desc').textContent = `수면시간 ${formatDurationKorean(durSeconds)}이 저장됐어요.`;
-      openModal('success-toast');
-      
-      syncHomeUI();
-    }
-
-    function closeToastAndShowTab(subTab) {
-      closeModal('success-toast');
-      switchMainTab('history');
-      switchSubTab(subTab);
-    }
-
-    // ── Daily List Rendering ──
-    let editingRecords = {}; // 임시 편집 상태 저장소
-
-    function renderDailyList() {
-      const container = document.getElementById('sub-view-daily');
-      if (!history.length) {
-        container.innerHTML = '<div class="empty-state"><span>🌙</span>아직 기록이 없어요</div>';
-        return;
-      }
-
-      container.innerHTML = history.map((rec, idx) => {
-        const d = new Date(rec.sleepTime);
-        const wakeD = new Date(rec.wakeTime);
-        const dateName = days[wakeD.getDay()];
-        const formattedDate = `${wakeD.getFullYear()}.${String(wakeD.getMonth() + 1).padStart(2, '0')}.${String(wakeD.getDate()).padStart(2, '0')} ${dateName}요일`;
-        
-        const durH = rec.duration / 3600;
-        let durClass = 'normal';
-        if (durH <= 5) {
-          durClass = 'bad';
-        } else if (durH >= 7) {
-          durClass = 'good';
-        } else {
-          durClass = 'normal';
-        }
-        
-        const sleepCondIconOnly = rec.sleepCondition === 'good' ? '<span style="color:#4ADE80">🟢 좋음</span>' : rec.sleepCondition === 'normal' ? '<span style="color:#FDE047">🟡 보통</span>' : '<span style="color:#FCA5A5">🔴 나쁨</span>';
-        const wakeCondIconOnly = rec.wakeCondition === 'good' ? '<span style="color:#4ADE80">🟢 좋음</span>' : rec.wakeCondition === 'normal' ? '<span style="color:#FDE047">🟡 보통</span>' : '<span style="color:#FCA5A5">🔴 나쁨</span>';
-
-        return `
-          <div class="history-card" id="daily-card-${idx}">
-            <div class="history-card-header">
-              <span class="history-card-date">${formattedDate}</span>
-              <div style="display: flex; gap: 8px; align-items: center;">
-                <button class="history-card-edit" onclick="startEditDailyRecord(${idx})" title="컨디션 수정" id="edit-btn-${idx}">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                  </svg>
-                </button>
-                <button class="history-card-delete" onclick="deleteHistoryItem(${idx})" title="삭제">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div class="history-card-body">
-              <span class="history-card-time">
-                <span class="time-highlight">${formatHoursMinutes(rec.sleepTime)}</span> → <span class="time-highlight">${formatHoursMinutes(rec.wakeTime)}</span>
-              </span>
-              <span class="history-card-dur ${durClass}">${formatDurationKorean(rec.duration)}</span>
-            </div>
-            
-            <!-- 일반 컨디션 조회 뷰 -->
-            <div class="history-card-conditions" id="view-cond-area-${idx}">
-              <span class="cond-item">취침 전 ${sleepCondIconOnly} → 기상 후 ${wakeCondIconOnly}</span>
-            </div>
-
-            <!-- 인라인 수정 편집 폼 뷰 -->
-            <div class="edit-cond-row" id="edit-cond-area-${idx}" style="display: none;">
-              <div class="edit-cond-group">
-                <div class="edit-cond-label">취침 전 컨디션</div>
-                <div class="edit-cond-chips-container">
-                  <button class="edit-chip" id="edit-chip-sleep-good-${idx}" onclick="selectEditCondition(${idx}, 'sleep', 'good')">🟢 좋음</button>
-                  <button class="edit-chip" id="edit-chip-sleep-normal-${idx}" onclick="selectEditCondition(${idx}, 'sleep', 'normal')">🟡 보통</button>
-                  <button class="edit-chip" id="edit-chip-sleep-bad-${idx}" onclick="selectEditCondition(${idx}, 'sleep', 'bad')">🔴 나쁨</button>
-                </div>
-              </div>
-              <div class="edit-cond-group" style="margin-top: 4px;">
-                <div class="edit-cond-label">기상 후 컨디션</div>
-                <div class="edit-cond-chips-container">
-                  <button class="edit-chip" id="edit-chip-wake-good-${idx}" onclick="selectEditCondition(${idx}, 'wake', 'good')">🟢 좋음</button>
-                  <button class="edit-chip" id="edit-chip-wake-normal-${idx}" onclick="selectEditCondition(${idx}, 'wake', 'normal')">🟡 보통</button>
-                  <button class="edit-chip" id="edit-chip-wake-bad-${idx}" onclick="selectEditCondition(${idx}, 'wake', 'bad')">🔴 나쁨</button>
-                </div>
-              </div>
-              <div class="edit-actions">
-                <button class="edit-action-btn cancel" onclick="cancelEditDailyRecord(${idx})">취소</button>
-                <button class="edit-action-btn save" onclick="saveEditDailyRecord(${idx})">저장</button>
-              </div>
-            </div>
+    history.unshift(rec);
+    saveHistory();
+
+    state.sleeping  = false;
+    state.sleepTime = null;
+    state.wakeTime  = wakeTime.toISOString();
+    saveState();
+
+    closeModal('modal-end');
+    closeModal('modal-warn');
+
+    // 토스트 표시
+    document.getElementById('toast-desc').textContent = `수면시간 ${durStr(secs)}이 저장됐어요.`;
+    openToast();
+    syncHome();
+  }
+
+  function confirmReset() { openModal('modal-reset'); }
+  function doReset() {
+    state.sleeping  = false;
+    state.sleepTime = null;
+    saveState();
+    closeModal('modal-reset');
+    syncHome();
+  }
+
+  /* ──────────────────────────────────────────────
+     MODAL HELPERS
+  ────────────────────────────────────────────── */
+  function openModal(id) {
+    const el = document.getElementById(id);
+    el.style.display = 'flex';
+    requestAnimationFrame(() => el.classList.add('show'));
+  }
+  function closeModal(id) {
+    const el = document.getElementById(id);
+    el.classList.remove('show');
+    setTimeout(() => { el.style.display = 'none'; }, 200);
+  }
+  function openToast() {
+    const el = document.getElementById('toast-done');
+    el.style.display = 'flex';
+    requestAnimationFrame(() => el.classList.add('show'));
+  }
+  function closeToast() {
+    const el = document.getElementById('toast-done');
+    el.classList.remove('show');
+    setTimeout(() => { el.style.display = 'none'; }, 200);
+  }
+
+  /* ──────────────────────────────────────────────
+     HISTORY
+  ────────────────────────────────────────────── */
+  function renderHistory() {
+    if (currentSub === 'daily')   renderDaily();
+    else if (currentSub === 'weekly')  renderWeekly();
+    else if (currentSub === 'monthly') renderMonthly();
+  }
+
+  /* 일별 */
+  function renderDaily() {
+    const el = document.getElementById('sub-daily');
+    if (history.length === 0) { el.innerHTML = '<div class="empty-state"><span class="empty-state-icon">🌙</span>아직 수면 기록이 없어요</div>'; return; }
+    el.innerHTML = history.map((r, i) => {
+      const dc = durClass(r.duration);
+      return `
+        <div class="h-card">
+          <div class="h-card-top">
+            <div class="h-card-date">${dateDayStr(r.wakeTime)}</div>
+            <button class="h-card-del" onclick="deleteRecord(${i})" title="삭제">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+            </button>
           </div>
-        `;
-      }).join('');
-    }
-
-    function startEditDailyRecord(idx) {
-      const rec = history[idx];
-      editingRecords[idx] = {
-        sleepCondition: rec.sleepCondition || 'normal',
-        wakeCondition: rec.wakeCondition || 'normal'
-      };
-
-      document.getElementById(`view-cond-area-${idx}`).style.display = 'none';
-      document.getElementById(`edit-cond-area-${idx}`).style.display = 'flex';
-      document.getElementById(`edit-btn-${idx}`).style.display = 'none';
-
-      renderEditChipsHighlight(idx);
-    }
-
-    function selectEditCondition(idx, type, cond) {
-      if (type === 'sleep') {
-        editingRecords[idx].sleepCondition = cond;
-      } else {
-        editingRecords[idx].wakeCondition = cond;
-      }
-      renderEditChipsHighlight(idx);
-    }
-
-    function renderEditChipsHighlight(idx) {
-      const temp = editingRecords[idx];
-      if (!temp) return;
-
-      const sleepConds = ['good', 'normal', 'bad'];
-      sleepConds.forEach(c => {
-        const el = document.getElementById(`edit-chip-sleep-${c}-${idx}`);
-        if (el) el.classList.toggle('active', temp.sleepCondition === c);
-        if (el) el.setAttribute('data-cond', c);
-      });
-
-      const wakeConds = ['good', 'normal', 'bad'];
-      wakeConds.forEach(c => {
-        const el = document.getElementById(`edit-chip-wake-${c}-${idx}`);
-        if (el) el.classList.toggle('active', temp.wakeCondition === c);
-        if (el) el.setAttribute('data-cond', c);
-      });
-    }
-
-    function cancelEditDailyRecord(idx) {
-      delete editingRecords[idx];
-      document.getElementById(`view-cond-area-${idx}`).style.display = 'block';
-      document.getElementById(`edit-cond-area-${idx}`).style.display = 'none';
-      document.getElementById(`edit-btn-${idx}`).style.display = 'inline-flex';
-    }
-
-    function saveEditDailyRecord(idx) {
-      const temp = editingRecords[idx];
-      if (temp) {
-        history[idx].sleepCondition = temp.sleepCondition;
-        history[idx].wakeCondition = temp.wakeCondition;
-        saveHistory();
-        delete editingRecords[idx];
-        renderDailyList();
-      }
-    }
-
-    function deleteHistoryItem(idx) {
-      if (!confirm('정말 삭제하시겠습니까?')) return;
-
-      const card = document.getElementById('daily-card-' + idx);
-      if (card) {
-        card.style.transition = 'all 0.25s ease';
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(10px)';
-        card.style.maxHeight = '0px';
-        card.style.padding = '0px';
-        card.style.marginTop = '0px';
-        card.style.marginBottom = '0px';
-        card.style.borderWidth = '0px';
-        card.style.overflow = 'hidden';
-      }
-
-      setTimeout(() => {
-        history.splice(idx, 1);
-        saveHistory();
-        renderHistoryTabs();
-      }, 250);
-    }
-
-    // ── Weekly Stats Rendering ──
-    function renderWeeklyStats() {
-      const container = document.getElementById('sub-view-weekly');
-      
-      // 기록이 3개 미만일 때 예외 안내문 노출 (P1 해결)
-      if (history.length < 3) {
-        container.innerHTML = `
-          <div class="card" style="border-color: rgba(255,255,255,0.05); text-align: center; padding: 40px 20px; background: rgba(30, 41, 59, 0.3);">
-            <div style="font-size: 40px; margin-bottom: 16px;">📊</div>
-            <div style="font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 8px;">아직 분석할 수면 기록이 부족해요</div>
-            <div style="font-size: 13.5px; color: var(--muted); line-height: 1.5;">
-              수면 패턴을 정확히 분석하기 위해 최소 <strong>3개 이상의 기록</strong>이 필요합니다.<br>
-              <span style="color: var(--accent); font-weight:600;">(현재 기록: ${history.length} / 3개)</span><br>
-              매일 아침 일어난 뒤 기록을 남겨보세요!
-            </div>
-          </div>`;
-        return;
-      }
-
-      // Group records by Year-Month-Week
-      const weeklyGroups = {};
-
-      history.forEach(rec => {
-        const d = new Date(rec.wakeTime);
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-        const weekNum = getWeekOfMonth(rec.date);
-        const weekKey = `${key}-w${weekNum}`;
-
-        if (!weeklyGroups[weekKey]) {
-          weeklyGroups[weekKey] = {
-            year: d.getFullYear(),
-            month: d.getMonth() + 1,
-            week: weekNum,
-            records: []
-          };
-        }
-        weeklyGroups[weekKey].records.push(rec);
-      });
-
-      const sortedWeekKeys = Object.keys(weeklyGroups).sort((a, b) => b.localeCompare(a));
-
-      container.innerHTML = sortedWeekKeys.map(weekKey => {
-        const group = weeklyGroups[weekKey];
-        const count = group.records.length;
-        
-        let totalSeconds = 0;
-        let goodCount = 0;
-        let normalCount = 0;
-        let badCount = 0;
-
-        group.records.forEach(rec => {
-          totalSeconds += rec.duration;
-          const cond = rec.wakeCondition || 'normal';
-          if (cond === 'good') goodCount++;
-          else if (cond === 'normal') normalCount++;
-          else if (cond === 'bad') badCount++;
-        });
-
-        const avgSeconds = totalSeconds / count;
-
-        return `
-          <div class="weekly-card">
-            <div class="weekly-card-title">${group.month}월 ${group.week}주차</div>
-            <div class="weekly-card-body" style="flex-direction: column; align-items: flex-start; gap: 12px;">
-              <div class="weekly-card-left">
-                <span class="weekly-card-sub">평균 수면시간</span>
-                <span class="weekly-card-dur">${formatDurationKorean(avgSeconds)}</span>
-              </div>
-              <div style="display: flex; gap: 6px; flex-wrap: wrap; width: 100%;">
-                <span class="weekly-cond-chip chip-good">좋음 🟢 <strong>${goodCount}회</strong></span>
-                <span class="weekly-cond-chip chip-normal">보통 🟡 <strong>${normalCount}회</strong></span>
-                <span class="weekly-cond-chip chip-bad">나쁨 🔴 <strong>${badCount}회</strong></span>
-              </div>
-            </div>
+          <div class="h-card-mid">
+            <div class="h-card-time">${hm(r.sleepTime)} → ${hm(r.wakeTime)}</div>
+            <div class="h-card-dur ${dc}">${durStr(r.duration)}</div>
           </div>
-        `;
-      }).join('');
-    }
+          <div class="h-card-bot">
+            <span>취침 전 ${condIcon(r.sleepCond)}</span>
+            <span>기상 후 ${condIcon(r.wakeCond)}</span>
+          </div>
+        </div>`;
+    }).join('');
+  }
 
-    // ── Monthly Calendar Rendering ──
-    function renderMonthlyCalendar() {
-      const monthNames = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
-      document.getElementById('calendar-month-title').textContent = `${calYear}년 ${monthNames[calMonth]}`;
+  function deleteRecord(idx) {
+    history.splice(idx, 1);
+    saveHistory();
+    renderDaily();
+  }
 
-      const avgDurationContainer = document.getElementById('monthly-avg-dur');
-      const condGoodText = document.getElementById('monthly-cond-good');
-      const condNormalText = document.getElementById('monthly-cond-normal');
-      const condBadText = document.getElementById('monthly-cond-bad');
-      const analysisCard = document.getElementById('monthly-analysis-card');
-      const gridContainer = document.getElementById('calendar-grid-container');
+  /* 주별 */
+  function renderWeekly() {
+    const el = document.getElementById('sub-weekly');
+    if (history.length === 0) { el.innerHTML = '<div class="empty-state"><span class="empty-state-icon">📊</span>아직 수면 기록이 없어요</div>'; return; }
 
-      // Fetch current month's historical data
-      const monthRecords = history.filter(rec => {
-        const d = new Date(rec.wakeTime);
-        return d.getFullYear() === calYear && d.getMonth() === calMonth;
-      });
-
-      // 1. 요약 정보 업데이트
-      if (monthRecords.length > 0) {
-        let totalSeconds = 0;
-        let goodCount = 0;
-        let normalCount = 0;
-        let badCount = 0;
-
-        monthRecords.forEach(rec => {
-          totalSeconds += rec.duration;
-          const cond = rec.wakeCondition || 'normal';
-          if (cond === 'good') goodCount++;
-          else if (cond === 'normal') normalCount++;
-          else if (cond === 'bad') badCount++;
-        });
-
-        const avgSeconds = totalSeconds / monthRecords.length;
-        avgDurationContainer.textContent = formatDurationKorean(avgSeconds);
-        
-        // 최다 컨디션 도출 알고리즘
-        let maxCondText = "";
-        if (goodCount > normalCount && goodCount > badCount) {
-          maxCondText = `이번 달은 <span style="color:#4ADE80">🟢 좋음</span>이 가장 많아요`;
-        } else if (normalCount > goodCount && normalCount > badCount) {
-          maxCondText = `이번 달은 <span style="color:#FDE047">🟡 보통</span>이 가장 많아요`;
-        } else if (badCount > goodCount && badCount > normalCount) {
-          maxCondText = `이번 달은 <span style="color:#FCA5A5">🔴 나쁨</span>이 가장 많아요`;
-        } else {
-          maxCondText = "이번 달은 수면 컨디션이 조화로워요";
-        }
-        document.getElementById('monthly-cond-summary-headline').innerHTML = maxCondText;
-
-        condGoodText.innerHTML = `<strong>${goodCount}회</strong>`;
-        condNormalText.innerHTML = `<strong>${normalCount}회</strong>`;
-        condBadText.innerHTML = `<strong>${badCount}회</strong>`;
-      } else {
-        avgDurationContainer.textContent = '--시간 --분';
-        document.getElementById('monthly-cond-summary-headline').textContent = "이번 달 기록이 존재하지 않습니다.";
-        condGoodText.innerHTML = "<strong>0회</strong>";
-        condNormalText.innerHTML = "<strong>0회</strong>";
-        condBadText.innerHTML = "<strong>0회</strong>";
-      }
-
-      // 2. 스마트 분석 카드 제어
-      if (history.length < 3 || monthRecords.length === 0) {
-        analysisCard.style.display = 'block';
-        document.getElementById('monthly-insight-headline').innerHTML = `
-          💡 아직 분석할 데이터가 부족해요.<br>
-          <span style="font-weight:500; font-size:12px; color:var(--muted)">3일 이상 유효한 수면 기록이 쌓이면 패턴을 분석해드릴게요.</span>
-        `;
-        document.getElementById('analysis-toggle-btn').style.display = 'none';
-        document.getElementById('monthly-analysis-wrapper').classList.remove('open');
-      } else {
-        analysisCard.style.display = 'block';
-        document.getElementById('analysis-toggle-btn').style.display = 'inline-flex';
-        generateSleepAnalysis(monthRecords);
-      }
-
-      gridContainer.innerHTML = ''; // Clear grid
-
-      // Render Headers (Sun - Sat)
-      const dayHeaders = ['일', '월', '화', '수', '목', '금', '토'];
-      dayHeaders.forEach(day => {
-        const headerCell = document.createElement('div');
-        headerCell.className = 'calendar-day-header';
-        headerCell.textContent = day;
-        gridContainer.appendChild(headerCell);
-      });
-
-      const firstDayIndex = new Date(calYear, calMonth, 1).getDay();
-      const lastDate = new Date(calYear, calMonth + 1, 0).getDate();
-
-      for (let i = 0; i < firstDayIndex; i++) {
-        const emptyCell = document.createElement('div');
-        emptyCell.className = 'calendar-cell empty';
-        gridContainer.appendChild(emptyCell);
-      }
-
-      const recordsMap = {};
-      monthRecords.forEach(rec => {
-        const dateNum = new Date(rec.wakeTime).getDate();
-        recordsMap[dateNum] = rec;
-      });
-
-      const today = new Date();
-      const isCurrentMonthYear = today.getFullYear() === calYear && today.getMonth() === calMonth;
-      const todayDateNum = today.getDate();
-
-      // Reset calendar selection state when redrawing month
-      const detailCard = document.getElementById('calendar-detail-card');
-      detailCard.style.display = 'none';
-      if (selectedCalendarCell) {
-        selectedCalendarCell.classList.remove('selected');
-        selectedCalendarCell = null;
-      }
-
-      for (let dateNum = 1; dateNum <= lastDate; dateNum++) {
-        const cell = document.createElement('div');
-        cell.className = 'calendar-cell';
-        
-        if (isCurrentMonthYear && dateNum === todayDateNum) {
-          cell.classList.add('today');
-        }
-
-        const dateNumSpan = document.createElement('span');
-        dateNumSpan.className = 'calendar-date-num';
-        dateNumSpan.textContent = dateNum;
-        cell.appendChild(dateNumSpan);
-
-        const matchRecord = recordsMap[dateNum];
-        if (matchRecord) {
-          cell.classList.add('has-data');
-          
-          // 기상 후 컨디션 배경색 히트맵화 (P1 해결)
-          const cond = matchRecord.wakeCondition || 'normal';
-          if (cond === 'good') {
-            cell.classList.add('cond-good');
-          } else if (cond === 'normal') {
-            cell.classList.add('cond-normal');
-          } else if (cond === 'bad') {
-            cell.classList.add('cond-bad');
-          }
-
-          cell.onclick = () => showCalendarDetail(dateNum, matchRecord, cell);
-        } else {
-          cell.onclick = () => showCalendarDetail(dateNum, null, cell);
-        }
-
-        gridContainer.appendChild(cell);
-      }
-    }
-
-    // ── Smart Sleep Analysis Engine (신규 개발 수면 가이드) ──
-    function generateSleepAnalysis(monthRecords) {
-      const insightHeadline = document.getElementById('monthly-insight-headline');
-      const analysisText = document.getElementById('monthly-analysis-text');
-      
-      let totalSeconds = 0;
-      let goodCount = 0;
-      let normalCount = 0;
-      let badCount = 0;
-      let goodDurations = [];
-
-      monthRecords.forEach(rec => {
-        totalSeconds += rec.duration;
-        const cond = rec.wakeCondition || 'normal';
-        if (cond === 'good') {
-          goodCount++;
-          goodDurations.push(rec.duration);
-        } else if (cond === 'normal') {
-          normalCount++;
-        } else if (cond === 'bad') {
-          badCount++;
-        }
-      });
-
-      const avgSeconds = totalSeconds / monthRecords.length;
-      const badRatio = badCount / monthRecords.length;
-
-      // Bedtime offset minutes calculation
-      const bedtimesInMinutes = monthRecords.map(rec => {
-        const d = new Date(rec.sleepTime);
-        let m = d.getHours() * 60 + d.getMinutes();
-        if (m < 720) {
-          m += 1440;
-        }
-        return m;
-      });
-
-      const avgBedtime = bedtimesInMinutes.reduce((sum, val) => sum + val, 0) / bedtimesInMinutes.length;
-      const variance = bedtimesInMinutes.reduce((sum, val) => sum + Math.pow(val - avgBedtime, 2), 0) / bedtimesInMinutes.length;
-      const stdDevMinutes = Math.sqrt(variance);
-
-      // 1. 헤드라인 인사이트 결정 (가장 우선되는 경고 1건)
-      let headline = "";
-      if (stdDevMinutes > 90) {
-        headline = `💡 이번 달은 잠드는 시간이 불규칙해요. 비슷한 시간에 잠드는 습관을 만들어보세요.`;
-      } else if (avgSeconds < 21600) { // 6 hours
-        headline = `💡 이번 달 평균 수면시간이 짧습니다. 충분한 수면시간을 확보해주세요.`;
-      } else if (avgSeconds >= 27000 && badRatio >= 0.35) {
-        headline = `💡 수면시간은 충분하지만 피곤함을 느낀 날이 많습니다. 잠들기 전 수면 방해 요소를 점검해보세요.`;
-      } else if (badRatio >= 0.40) {
-        headline = `💡 기상 후 컨디션이 저조한 날이 많습니다. 수면 환경을 개선해보시길 추천합니다.`;
-      } else {
-        headline = `💡 규칙적이고 건강한 수면 패턴을 유지하고 계십니다!`;
-      }
-      insightHeadline.innerHTML = headline;
-
-      // 2. 세부 분석 리포트 문장 목록 생성
-      let insights = [];
-      if (avgSeconds < 21600) {
-        insights.push(`⚠️ <strong>수면 부족</strong>: 이번 달 평균 수면시간이 <strong>${formatDurationKorean(avgSeconds)}</strong>으로 부족합니다. 목표 수면시간을 최소 30분 늘려 충분한 휴식을 권장합니다.`);
-      }
-      if (stdDevMinutes > 90) {
-        insights.push(`⚠️ <strong>불규칙한 패턴</strong>: 취침시간 편차가 <strong>${Math.round(stdDevMinutes)}분</strong>으로 큽니다. 일정한 시간에 잠들도록 루틴을 정해보세요.`);
-      }
-      if (avgSeconds >= 27000 && badRatio >= 0.35) {
-        insights.push(`🔍 <strong>수면 효율 낮음</strong>: 충분히 잤지만 기상 후 <span style="color:#FCA5A5">🔴 나쁨</span> 비중이 <strong>${Math.round(badRatio * 100)}%</strong>로 높습니다. 저녁 카페인 섭취나 스마트폰 이용 등이 방해되었는지 되돌아보세요.`);
-      } else if (badRatio >= 0.40) {
-        insights.push(`🔍 <strong>컨디션 주의</strong>: 피로가 느껴졌던(<span style="color:#FCA5A5">🔴 나쁨</span>) 날이 잦으므로 반신욕이나 조명 조절 등으로 숙면 환경을 유도해보세요.`);
-      }
-      if (goodDurations.length > 0) {
-        const avgGoodDur = goodDurations.reduce((sum, val) => sum + val, 0) / goodDurations.length;
-        insights.push(`✨ <strong>골든 수면 타임</strong>: 개운하게(<span style="color:#4ADE80">🟢 좋음</span>) 일어난 날의 평균 수면시간은 <strong>${formatDurationKorean(avgGoodDur)}</strong>입니다. 이 시간을 목표 수면량으로 권장해 드립니다.`);
-      }
-      if (insights.length === 0) {
-        insights.push(`✨ 규칙적이고 이상적인 수면 패턴을 조화롭게 이행 중입니다. 좋은 수면 위생을 계속 이어가세요!`);
-      }
-
-      analysisText.innerHTML = insights.map(text => `<p style="margin-bottom: 6px;">${text}</p>`).join('');
-    }
-
-    function toggleAnalysisDetails() {
-      const wrapper = document.getElementById('monthly-analysis-wrapper');
-      const btn = document.getElementById('analysis-toggle-btn');
-      if (wrapper.classList.contains('open')) {
-        wrapper.classList.remove('open');
-        btn.querySelector('span').textContent = '[자세한 분석 보기]';
-      } else {
-        wrapper.classList.add('open');
-        btn.querySelector('span').textContent = '[자세한 분석 닫기]';
-      }
-    }
-
-    function showCalendarDetail(dateNum, record, cellEl) {
-      if (selectedCalendarCell) {
-        selectedCalendarCell.classList.remove('selected');
-      }
-      cellEl.classList.add('selected');
-      selectedCalendarCell = cellEl;
-
-      const detailCard = document.getElementById('calendar-detail-card');
-      const detailDate = document.getElementById('calendar-detail-date');
-      const detailBody = document.getElementById('calendar-detail-body');
-
-      const dateStr = `${calYear}.${String(calMonth + 1).padStart(2, '0')}.${String(dateNum).padStart(2, '0')}`;
-      const d = new Date(calYear, calMonth, dateNum);
-      const dayName = days[d.getDay()];
-      detailDate.textContent = `${dateStr} (${dayName}요일)`;
-
-      if (record) {
-        const conditionIcons = { 
-          good: '<span style="color:#4ADE80">🟢 좋음</span>', 
-          normal: '<span style="color:#FDE047">🟡 보통</span>', 
-          bad: '<span style="color:#FCA5A5">🔴 나쁨</span>' 
-        };
-        const durHours = record.duration / 3600;
-        const durText = formatDurationKorean(record.duration);
-
-        let bodyHtml = `
-          <div><strong>⏰ 수면 시간대:</strong> ${formatHoursMinutes(record.sleepTime)} → ${formatHoursMinutes(record.wakeTime)}</div>
-          <div><strong>⏳ 총 수면시간:</strong> ${durText} (${durHours.toFixed(1)}시간)</div>
-          <div><strong>💤 컨디션 변화:</strong> 취침 전 ${conditionIcons[record.sleepCondition || 'normal']} → 기상 후 ${conditionIcons[record.wakeCondition || 'normal']}</div>
-        `;
-        detailBody.innerHTML = bodyHtml;
-      } else {
-        detailBody.innerHTML = `<div style="color: var(--muted); text-align: center; padding: 10px 0;">이 날은 기록된 수면 데이터가 없습니다.</div>`;
-      }
-      
-      detailCard.style.display = 'block';
-      detailCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-
-    function changeMonth(direction) {
-      calMonth += direction;
-      if (calMonth < 0) {
-        calMonth = 11;
-        calYear--;
-      } else if (calMonth > 11) {
-        calMonth = 0;
-        calYear++;
-      }
-      renderMonthlyCalendar();
-    }
-
-    // ── Application Initialization ──
-    window.addEventListener('DOMContentLoaded', () => {
-      syncHomeUI();
-      startRealtimeTimer(); // Run realtime timer constantly
+    const weeks = {};
+    history.forEach(r => {
+      const d = new Date(r.wakeTime);
+      const firstDay = new Date(d.getFullYear(), d.getMonth(), 1).getDay();
+      const week = `${d.getFullYear()}-${d.getMonth()+1}-W${Math.ceil((d.getDate() + firstDay) / 7)}`;
+      if (!weeks[week]) weeks[week] = { records: [], label: `${d.getFullYear()}년 ${d.getMonth()+1}월 ${Math.ceil((d.getDate()+firstDay)/7)}주차` };
+      weeks[week].records.push(r);
     });
 
-    // ── PWA Service Worker Registration ──
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    el.innerHTML = Object.entries(weeks).map(([k, w]) => {
+      const avg = w.records.reduce((s, r) => s + r.duration, 0) / w.records.length;
+      const good   = w.records.filter(r => r.wakeCond === 'good').length;
+      const normal = w.records.filter(r => r.wakeCond === 'normal').length;
+      const bad    = w.records.filter(r => r.wakeCond === 'bad').length;
+      return `
+        <div class="w-card">
+          <div class="w-card-title">${w.label}</div>
+          <div class="w-card-body">
+            <div>
+              <div style="font-size:11px;color:var(--muted);margin-bottom:4px">평균 수면시간</div>
+              <div class="w-card-dur">${durStr(avg)}</div>
+            </div>
+            <div class="w-card-conds">
+              ${good   ? `<span class="w-chip good">🟢<strong>${good}</strong></span>` : ''}
+              ${normal ? `<span class="w-chip normal">🟡<strong>${normal}</strong></span>` : ''}
+              ${bad    ? `<span class="w-chip bad">🔴<strong>${bad}</strong></span>` : ''}
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  /* 월별 캘린더 */
+  let calYear  = new Date().getFullYear();
+  let calMonth = new Date().getMonth();
+  let selectedCell = null;
+
+  function changeMonth(d) {
+    calMonth += d;
+    if (calMonth < 0)  { calMonth = 11; calYear--; }
+    if (calMonth > 11) { calMonth = 0;  calYear++; }
+    renderMonthly();
+  }
+
+  function renderMonthly() {
+    // 요약
+    const monthRecs = history.filter(r => {
+      const d = new Date(r.wakeTime);
+      return d.getFullYear() === calYear && d.getMonth() === calMonth;
+    });
+
+    const avgSecs = monthRecs.length ? monthRecs.reduce((s,r) => s + r.duration, 0) / monthRecs.length : 0;
+    document.getElementById('monthly-avg').textContent = avgSecs ? durStr(avgSecs) : '--시간 --분';
+    document.getElementById('m-good').textContent   = monthRecs.filter(r => r.wakeCond === 'good').length   + '회';
+    document.getElementById('m-normal').textContent = monthRecs.filter(r => r.wakeCond === 'normal').length + '회';
+    document.getElementById('m-bad').textContent    = monthRecs.filter(r => r.wakeCond === 'bad').length    + '회';
+
+    // 캘린더 타이틀
+    document.getElementById('cal-title').textContent = `${calYear}년 ${calMonth+1}월`;
+
+    // 그리드
+    const grid = document.getElementById('cal-grid');
+    const dayHdrs = ['일','월','화','수','목','금','토'].map(d => `<div class="cal-day-hdr">${d}</div>`).join('');
+    const firstDay = new Date(calYear, calMonth, 1).getDay();
+    const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+    const today = new Date();
+
+    const recByDate = {};
+    monthRecs.forEach(r => { recByDate[new Date(r.wakeTime).getDate()] = r; });
+
+    let cells = Array(firstDay).fill('<div class="cal-cell empty"></div>');
+    for (let day = 1; day <= daysInMonth; day++) {
+      const rec = recByDate[day];
+      const isToday = today.getFullYear() === calYear && today.getMonth() === calMonth && today.getDate() === day;
+      const cls = ['cal-cell'];
+      if (rec) { cls.push('has-data'); cls.push('cond-' + rec.wakeCond); }
+      if (isToday) cls.push('today');
+      cells.push(`
+        <div class="${cls.join(' ')}" onclick="showCalDetail(${day})">
+          <div class="cal-num">${day}</div>
+          ${rec ? `<div class="cal-time">${durStr(rec.duration).replace('시간','h').replace('분','m')}</div>` : ''}
+          ${rec ? `<div class="cal-emoji">${rec.wakeCond === 'good' ? '🟢' : rec.wakeCond === 'bad' ? '🔴' : '🟡'}</div>` : ''}
+        </div>`);
     }
-  </script>
+
+    grid.innerHTML = dayHdrs + cells.join('');
+    document.getElementById('cal-detail').style.display = 'none';
+    selectedCell = null;
+  }
+
+  function showCalDetail(day) {
+    // 선택 셀 하이라이트
+    const allCells = document.querySelectorAll('.cal-cell:not(.empty)');
+    allCells.forEach(c => c.classList.remove('selected'));
+
+    const firstDay = new Date(calYear, calMonth, 1).getDay();
+    const cellIdx  = firstDay + day - 1;
+    const allNodes = document.querySelectorAll('#cal-grid .cal-cell');
+    if (allNodes[cellIdx]) {
+      allNodes[cellIdx].classList.add('selected');
+      selectedCell = allNodes[cellIdx];
+    }
+
+    const d = new Date(calYear, calMonth, day);
+    const rec = history.find(r => {
+      const wd = new Date(r.wakeTime);
+      return wd.getFullYear() === calYear && wd.getMonth() === calMonth && wd.getDate() === day;
+    });
+
+    const detail = document.getElementById('cal-detail');
+    document.getElementById('cal-detail-date').textContent = `📅 ${calYear}.${String(calMonth+1).padStart(2,'0')}.${String(day).padStart(2,'0')} (${DAYS[d.getDay()]}요일)`;
+
+    if (rec) {
+      document.getElementById('cal-detail-body').innerHTML = `
+        <div>⏰ <strong>수면 시간대:</strong> ${hm(rec.sleepTime)} → ${hm(rec.wakeTime)}</div>
+        <div>⏳ <strong>총 수면시간:</strong> ${durStr(rec.duration)}</div>
+        <div>💤 <strong>컨디션:</strong> 취침 전 ${condIcon(rec.sleepCond)} → 기상 후 ${condIcon(rec.wakeCond)}</div>`;
+    } else {
+      document.getElementById('cal-detail-body').innerHTML = '<div style="color:var(--muted);text-align:center">이 날은 기록된 수면 데이터가 없습니다.</div>';
+    }
+    detail.style.display = 'block';
+    setTimeout(() => detail.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+  }
+
+  /* ──────────────────────────────────────────────
+     INIT
+  ────────────────────────────────────────────── */
+  document.addEventListener('DOMContentLoaded', () => {
+    syncHome();
+    startClock();
+  });
+
+  /* ──────────────────────────────────────────────
+     SERVICE WORKER
+  ────────────────────────────────────────────── */
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+</script>
 </body>
 </html>
