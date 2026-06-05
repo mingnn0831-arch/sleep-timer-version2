@@ -40,9 +40,10 @@
     }
 
     html {
-      min-height: 100dvh;
+      height: 100dvh;
       background-color: var(--bg-end) !important;
       overscroll-behavior: none;
+      overflow: hidden;
     }
 
     html, body {
@@ -51,14 +52,16 @@
       font-family: var(--font);
       user-select: none;
       overscroll-behavior: none;
+      overflow: hidden;
     }
 
     body {
       display: flex;
       flex-direction: column;
-      min-height: 100dvh;
+      height: 100dvh;
       padding: 0 env(safe-area-inset-right) 0 env(safe-area-inset-left);
       background-color: var(--bg-end);
+      overflow: hidden;
     }
 
     /* ── App Header ── */
@@ -1369,6 +1372,19 @@
     </div>
   </div>
 
+  <!-- Reset confirmation modal -->
+  <div class="modal-overlay" id="reset-confirm-modal">
+    <div class="modal-card">
+      <div class="modal-title" style="color: var(--bad);" id="reset-modal-title">기록을 초기화할까요?</div>
+      <div class="modal-desc" id="reset-modal-desc">기록을 삭제하고 측정 상태를 초기화하시겠습니까?</div>
+      <div style="font-size: 40px; margin-bottom: 20px;">♻️</div>
+      <div class="modal-buttons">
+        <button class="modal-btn modal-btn-cancel" onclick="closeModal('reset-confirm-modal')">취소</button>
+        <button class="modal-btn modal-btn-action" style="background: var(--bad); box-shadow: 0 4px 15px rgba(239, 68, 68, 0.25);" onclick="executeResetRecord()">초기화하기</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ── State & LocalStorage Keys ──
     const STATE_KEY = 'sleep_state_v2';
@@ -1384,6 +1400,7 @@
     };
     
     let history = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
+    let resetMode = '';
     
     // UI Navigation States
     let currentMainTab = 'home';
@@ -1735,7 +1752,24 @@
 
     function resetTodayRecord() {
       if (state.sleeping) {
-        if (!confirm('현재 측정 중인 수면 기록을 초기화하시겠습니까?\n(수면 측정 상태가 해제됩니다.)')) return;
+        resetMode = 'sleeping';
+        document.getElementById('reset-modal-desc').innerHTML = '현재 측정 중인 수면 기록이 초기화됩니다.<br>(수면 측정 상태가 해제됩니다.)';
+        openModal('reset-confirm-modal');
+      } else {
+        const now = new Date();
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const todayIdx = history.findIndex(rec => rec.date === todayStr);
+        if (todayIdx !== -1) {
+          resetMode = 'completed';
+          document.getElementById('reset-modal-desc').innerHTML = '오늘 완료된 수면 기록을 삭제하고 초기화하시겠습니까?<br>(기록 및 분석 데이터가 삭제됩니다.)';
+          openModal('reset-confirm-modal');
+        }
+      }
+    }
+
+    function executeResetRecord() {
+      closeModal('reset-confirm-modal');
+      if (resetMode === 'sleeping') {
         state.sleeping = false;
         state.sleepTime = null;
         state.sleepCondition = 'normal';
@@ -1743,20 +1777,18 @@
         state.pendingWakeTime = null;
         saveState();
         syncHomeUI();
-      } else {
+      } else if (resetMode === 'completed') {
         const now = new Date();
         const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         const todayIdx = history.findIndex(rec => rec.date === todayStr);
         if (todayIdx !== -1) {
-          if (!confirm('오늘 완료된 수면 기록을 삭제하고 초기화하시겠습니까?')) return;
           history.splice(todayIdx, 1);
           saveHistory();
           syncHomeUI();
           renderHistoryTabs(); // 히스토리 리스트도 동시 업데이트
-        } else {
-          alert('초기화할 오늘의 기록이 없습니다.');
         }
       }
+      resetMode = '';
     }
 
     function selectCondition(type, cond) {
