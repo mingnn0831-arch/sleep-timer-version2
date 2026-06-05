@@ -176,12 +176,16 @@
        · safe-area-inset-bottom으로 홈 인디케이터 위에 배치
     ──────────────────────────────────────────────── */
     .btn-bar {
-      flex-shrink: 0;
-      padding: 12px 20px calc(var(--sab) + 16px);
+      position: absolute;            /* flex 형제 → 떠 있는 오버레이로 */
+      left: 0; right: 0; bottom: 0;
+      z-index: 10;
+      padding: 24px 20px calc(var(--sab) + 16px); /* 윗 여백 키워 페이드 자연스럽게 */
       padding-left: calc(var(--sal) + 20px);
       padding-right: calc(var(--sar) + 20px);
-      background: linear-gradient(to top, var(--bg-end) 50%, transparent);
+      background: linear-gradient(to top, var(--bg-end) 55%, transparent);
+      pointer-events: none;          /* 투명한 윗부분이 스크롤/탭 가로채지 않도록 */
     }
+    .btn-bar .cta-btn { pointer-events: auto; } /* 버튼만 클릭 가능 */
     .cta-btn {
       width: 100%;
       height: 56px;
