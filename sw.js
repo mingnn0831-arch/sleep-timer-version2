@@ -1,4 +1,4 @@
-const CACHE = 'sleep-v10';
+const CACHE = 'sleep-v11';
 const FILES = [
   './index.html',
   './manifest.json',

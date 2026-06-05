@@ -40,7 +40,6 @@
     }
 
     html {
-      height: 100dvh;
       background-color: var(--bg-end) !important;
       overscroll-behavior: none;
       overflow: hidden;
@@ -56,9 +55,13 @@
     }
 
     body {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
       display: flex;
       flex-direction: column;
-      height: 100dvh;
       padding: 0 env(safe-area-inset-right) 0 env(safe-area-inset-left);
       background-color: var(--bg-end);
       overflow: hidden;
